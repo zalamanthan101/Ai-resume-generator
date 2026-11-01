@@ -1,0 +1,139 @@
+<style>
+  .tpl7, .tpl7 * { box-sizing: border-box; }
+  .tpl7 {
+    --tpl7-font-size: {{ (data.template_customizations.font_size if data.template_customizations else 13)|float }}px;
+    --tpl7-heading-color: {{ data.template_customizations.heading_color if data.template_customizations else '#111827' }};
+    --tpl7-text-color: {{ data.template_customizations.text_color if data.template_customizations else '#374151' }};
+    --tpl7-line-height: {{ (data.template_customizations.line_height if data.template_customizations else 1.38)|float }};
+    --tpl7-page-padding: {{ (data.template_customizations.page_padding if data.template_customizations else 18)|float }}px;
+    --tpl7-left-padding: {{ (data.template_customizations.left_padding if data.template_customizations else 16)|float }}px;
+    --tpl7-right-padding: {{ (data.template_customizations.right_padding if data.template_customizations else 16)|float }}px;
+    --tpl7-header-background: {{ data.template_customizations.header_background if data.template_customizations else '#ffffff' }};
+    --tpl7-body-background: {{ data.template_customizations.body_background if data.template_customizations else '#ffffff' }};
+    width: 100%;
+    background: var(--tpl7-body-background);
+    color: var(--tpl7-text-color);
+    padding: 18mm 16mm 14mm;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: var(--tpl7-font-size);
+    overflow-wrap: anywhere;
+  }
+  .tpl7 .resume-name { margin: 0 0 4px; text-align: center; font-size: 2.8em; font-weight: 700; color: var(--tpl7-heading-color); }
+  .tpl7 .executive-v7-header { margin-bottom: 10mm; }
+  .tpl7 .executive-v7-meta { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; color: #4b5563; font-size: 1em; }
+  .tpl7 .executive-v7-meta span::before { content: "•"; margin-right: 10px; }
+  .tpl7 .executive-v7-meta span:first-child::before { content: ""; margin-right: 0; }
+  .tpl7 .executive-v7-section { margin-bottom: 7mm; }
+  .tpl7 .executive-v7-section h5 { margin: 0 0 2.5mm; padding-bottom: 1.5mm; border-bottom: 0.5mm solid #3f3f46; color: var(--tpl7-heading-color); font-size: 1.35em; font-weight: 400; }
+  .tpl7 .executive-v7-section p { margin: 0; font-size: 1em; line-height: var(--tpl7-line-height); }
+  .tpl7 .executive-v7-entry { margin-bottom: 3.5mm; }
+  .tpl7 .executive-v7-entry-head { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; margin-bottom: 1.6mm; }
+  .tpl7 .executive-v7-entry-head strong { font-size: 1.22em; color: #1f2937; }
+  .tpl7 .executive-v7-subtitle { font-style: italic; font-size: 1em; color: #4b5563; }
+  .tpl7 .executive-v7-entry-meta { text-align: right; color: #4b5563; font-style: italic; font-size: 1em; white-space: nowrap; }
+  .tpl7 a, .tpl7 .resume-link-label { color: #1d4ed8; text-decoration: underline; font-weight: 600; }
+  .tpl7 .preline { white-space: pre-line; }
+  .tpl7 .ats-justify { text-align: justify; text-justify: inter-word; hyphens: auto; }
+  .tpl7 [data-canvas-section] { position: relative; }
+  .tpl7 .canvas-handle { display: none; position: absolute; top: 10px; right: 10px; }
+  @media (max-width: 991px) {
+    .tpl7 .executive-v7-entry-head { grid-template-columns: 1fr; }
+    .tpl7 .executive-v7-entry-meta { text-align: left; white-space: normal; }
+  }
+</style>
+
+<div class="tpl7">
+  <header class="executive-v7-header">
+    <h1 class="resume-name" data-canvas-edit data-field="full_name">{{ data.full_name }}</h1>
+    <div class="executive-v7-meta">
+      <span data-canvas-edit data-field="location">{{ data.location }}</span>
+      <span data-canvas-edit data-field="email">{{ data.email }}</span>
+      <span data-canvas-edit data-field="phone">{{ data.phone }}</span>
+      {% if data.profile_link_items %}
+      <span>{% include '_profile_links.html' %}</span>
+      {% endif %}
+    </div>
+  </header>
+
+  {% set orders = data.section_orders if data.section_orders else {} %}
+  {% set default_main_order = ['summary', 'experience', 'projects', 'education', 'skills', 'achievements'] %}
+  {% set main_order = ((orders.get('main') if orders else None) or []) | list %}
+  {% if not main_order %}
+    {% set main_order = default_main_order | list %}
+  {% endif %}
+  {% for key in default_main_order %}
+    {% if key not in main_order %}
+      {% set _ = main_order.append(key) %}
+    {% endif %}
+  {% endfor %}
+
+  <div data-canvas-container="main">
+  {% for key in main_order %}
+    {% if key == 'summary' %}
+    <section class="executive-v7-section" draggable="true" data-canvas-section="summary">
+      <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+      <h5>Professional Summary</h5>
+      <p data-canvas-edit data-field="summary">{{ data.summary }}</p>
+    </section>
+    {% elif key == 'experience' %}
+    <section class="executive-v7-section" draggable="true" data-canvas-section="experience">
+      <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+      <h5>Professional Experience</h5>
+      <div class="executive-v7-entry">
+        <div class="executive-v7-entry-head">
+          <div>
+            <strong>{{ data.job_title or 'Professional Role' }}</strong>
+            <div class="executive-v7-subtitle">{{ data.college or 'Organization' }}</div>
+          </div>
+          <div class="executive-v7-entry-meta">
+            <div>{{ data.location }}</div>
+            <div>{{ data.year }}</div>
+          </div>
+        </div>
+      <p class="preline ats-justify" data-canvas-edit data-field="experience_desc">{{ (data.experience_desc or 'Add experience details.')|clean_multiline_bullets }}</p>
+      </div>
+    </section>
+    {% elif key == 'projects' %}
+    <section class="executive-v7-section" draggable="true" data-canvas-section="projects">
+      <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+      <h5>Projects</h5>
+      <p class="preline ats-justify" data-canvas-edit data-field="project_desc">{{ (data.project_desc or 'Add project details.')|clean_multiline_bullets }}</p>
+    </section>
+    {% elif key == 'education' %}
+    <section class="executive-v7-section" draggable="true" data-canvas-section="education">
+      <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+      <h5>Education</h5>
+      {% for entry in data.education_entries %}
+      <div class="executive-v7-entry-head">
+        <div>
+          <strong>{{ entry.degree }}</strong>
+          <div class="executive-v7-subtitle">{{ entry.college }}</div>
+        </div>
+        <div class="executive-v7-entry-meta">
+          <div>{{ entry.cgpa }}</div>
+          <div>{{ entry.year }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% elif key == 'skills' %}
+    <section class="executive-v7-section" draggable="true" data-canvas-section="skills">
+      <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+      <h5>Expert-Level Skills</h5>
+      {% if data.technical_skills_grouped %}
+      <p class="preline" data-canvas-edit data-field="technical_skills_grouped">{{ data.technical_skills_grouped }}</p>
+      {% else %}
+      <p><strong>Technical:</strong> <span data-canvas-edit data-field="technical_skills">{{ data.technical_skills }}</span></p>
+      {% endif %}
+      <p><strong>Soft:</strong> <span data-canvas-edit data-field="soft_skills">{{ data.soft_skills }}</span></p>
+    </section>
+    {% elif key == 'achievements' and data.achievements %}
+    <section class="executive-v7-section" draggable="true" data-canvas-section="achievements">
+      <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+      <h5>Achievements</h5>
+      <p class="preline" data-canvas-edit data-field="achievements">{{ data.achievements|clean_multiline_bullets }}</p>
+    </section>
+    {% endif %}
+  {% endfor %}
+  </div>
+</div>

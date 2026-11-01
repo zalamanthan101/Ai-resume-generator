@@ -1,0 +1,431 @@
+<!-- 
+AI Resume Helper Template Snippet
+Add this to your resume.html template to enable AI features
+-->
+
+<!-- Include this in your CSS section or link to a stylesheet -->
+<style>
+  .ai-helper-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    color: white;
+  }
+
+  .ai-button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    transition: background 0.3s;
+  }
+
+  .ai-button:hover {
+    background: #45a049;
+  }
+
+  .ai-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  .ai-loading {
+    display: none;
+    color: #fff;
+    font-size: 12px;
+  }
+
+  .ai-loading.active::after {
+    content: " ...";
+    animation: dots 1.5s steps(4, end) infinite;
+  }
+
+  @keyframes dots {
+    0%, 20% { content: "."; }
+    40% { content: ".."; }
+    60% { content: "..."; }
+    80%, 100% { content: ""; }
+  }
+
+  .skill-tag {
+    display: inline-block;
+    background: #4CAF50;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin: 4px;
+    font-size: 12px;
+  }
+
+  .extracted-skills {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+</style>
+
+<!-- AI Helper Section for Work Experience -->
+<div class="ai-helper-section">
+  <h3>✨ AI Resume Assistant</h3>
+  
+  <!-- Generate Bullet Points -->
+  <div style="margin-bottom: 15px;">
+    <h4>Generate Achievement Bullets</h4>
+    <select id="bullets_kind" style="padding: 8px; margin-right: 10px;">
+      <option value="experience" selected>Experience</option>
+      <option value="project">Project</option>
+    </select>
+    <input type="text" id="job_title_input" placeholder="Enter job title..." style="padding: 8px; width: 200px;">
+    <input type="text" id="skills_input" placeholder="Skills (comma-separated)..." style="padding: 8px; width: 250px;">
+    <input type="text" id="keywords_input" placeholder="ATS keywords (optional)..." style="padding: 8px; width: 250px; margin-top: 10px;">
+    <textarea id="bullets_context" placeholder="Context (optional): company/project, what you did, tech, results..." 
+              style="width: 100%; height: 80px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; margin-top: 10px;"></textarea>
+    <textarea id="bullets_job_description" placeholder="Target job description (optional)..." 
+              style="width: 100%; height: 80px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; margin-top: 10px;"></textarea>
+    <button class="ai-button" onclick="generateBullets()">Generate Bullets</button>
+    <div class="ai-loading" id="bullets_loading">Generating...</div>
+  </div>
+
+  <!-- Textarea for generated content -->
+  <textarea id="generated_bullets" placeholder="Generated bullet points will appear here..." 
+            style="width: 100%; height: 120px; padding: 10px; border-radius: 5px; 
+                   border: 1px solid #ddd; font-family: inherit; margin-bottom: 10px; resize: vertical;"></textarea>
+  
+  <!-- Optimize Content -->
+  <div style="margin-bottom: 15px;">
+    <h4>Optimize for ATS</h4>
+    <textarea id="content_to_optimize" placeholder="Paste your work description here..." 
+              style="width: 100%; height: 100px; padding: 10px; border-radius: 5px; 
+                     border: 1px solid #ddd; margin-bottom: 10px;"></textarea>
+    <button class="ai-button" onclick="optimizeContent()">Optimize Content</button>
+    <div class="ai-loading" id="optimize_loading">Optimizing...</div>
+  </div>
+
+  <!-- Improve Single Description -->
+  <div style="margin-bottom: 15px;">
+    <h4>Improve Description</h4>
+    <input type="text" id="single_description" placeholder="Paste a bullet point to improve..." 
+           style="padding: 8px; width: 100%; box-sizing: border-box; margin-bottom: 10px;">
+    <button class="ai-button" onclick="improveDescription()">Improve</button>
+    <div class="ai-loading" id="improve_loading">Improving...</div>
+  </div>
+  
+  <div id="improved_result" style="background: white; padding: 10px; border-radius: 5px; 
+                                   margin-top: 10px; display: none; color: #333;"></div>
+
+  <!-- Extract Skills from Job Description -->
+  <div style="margin-bottom: 15px;">
+    <h4>Extract Skills from Job Description</h4>
+    <textarea id="job_description" placeholder="Paste the job description here..." 
+              style="width: 100%; height: 100px; padding: 10px; border-radius: 5px; 
+                     border: 1px solid #ddd; margin-bottom: 10px;"></textarea>
+    <button class="ai-button" onclick="extractSkills()">Extract Skills</button>
+    <div class="ai-loading" id="extract_loading">Extracting...</div>
+  </div>
+
+  <div class="extracted-skills" id="extracted_skills"></div>
+
+  <!-- Generate Profile Summary -->
+  <div style="margin-bottom: 15px;">
+    <h4>Generate Profile Summary</h4>
+    <input type="text" id="summary_name" placeholder="Your name..." style="padding: 8px; width: 150px; margin-right: 10px;">
+    <input type="text" id="summary_title" placeholder="Target job title..." style="padding: 8px; width: 200px; margin-right: 10px;">
+    <input type="number" id="summary_years" placeholder="Years experience..." style="padding: 8px; width: 120px; margin-right: 10px;">
+    <button class="ai-button" onclick="generateSummary()" style="display: block; margin-top: 10px;">Generate Summary</button>
+    <div class="ai-loading" id="summary_loading">Generating...</div>
+  </div>
+
+  <textarea id="generated_summary" placeholder="Generated summary will appear here..." 
+            style="width: 100%; height: 80px; padding: 10px; border-radius: 5px; 
+                   border: 1px solid #ddd; font-family: inherit; resize: vertical;"></textarea>
+
+  <!-- Summarize Text -->
+  <div style="margin-top: 20px;">
+    <h4>Summarize Project / Experience</h4>
+    <select id="summarize_kind" style="padding: 8px; margin-right: 10px;">
+      <option value="project" selected>Project</option>
+      <option value="experience">Experience</option>
+      <option value="general">General</option>
+    </select>
+    <input type="number" id="summarize_sentences" placeholder="Sentences" value="2" min="1" max="4" style="padding: 8px; width: 120px;">
+    <textarea id="summarize_text" placeholder="Paste notes or a description to summarize..." 
+              style="width: 100%; height: 100px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; margin-top: 10px;"></textarea>
+    <button class="ai-button" onclick="summarizeText()">Summarize</button>
+    <div class="ai-loading" id="summarize_loading">Summarizing...</div>
+    <textarea id="summarize_output" placeholder="Summary will appear here..." 
+              style="width: 100%; height: 80px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; margin-top: 10px; resize: vertical;"></textarea>
+  </div>
+</div>
+
+<!-- Include this JavaScript in your template or in a separate .js file -->
+<script>
+  // Helper function to show loading message
+  function setLoading(element, isLoading) {
+    if (isLoading) {
+      element.classList.add('active');
+    } else {
+      element.classList.remove('active');
+    }
+  }
+
+  // Generate Bullet Points
+  async function generateBullets() {
+    const jobTitle = document.getElementById('job_title_input').value.trim();
+    const skillsInput = document.getElementById('skills_input').value;
+    const skills = skillsInput.split(',').map(s => s.trim()).filter(s => s);
+    const kind = document.getElementById('bullets_kind').value;
+    const context = document.getElementById('bullets_context').value || '';
+    const jobDescription = document.getElementById('bullets_job_description').value || '';
+    const keywords = (document.getElementById('keywords_input').value || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s);
+    const output = document.getElementById('generated_bullets');
+    const loadingEl = document.getElementById('bullets_loading');
+
+    if (!jobTitle) {
+      alert('Please enter a job title');
+      return;
+    }
+
+    setLoading(loadingEl, true);
+    output.value = '';
+
+    try {
+      const response = await fetch('/api/ai/generate-bullets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_title: jobTitle,
+          skills: skills,
+          num_bullets: 3,
+          kind: kind,
+          context: context,
+          keywords: keywords,
+          job_description: jobDescription
+        })
+      });
+
+      const data = await response.json();
+      setLoading(loadingEl, false);
+
+      if (response.ok) {
+        output.value = data.bullets;
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      setLoading(loadingEl, false);
+      alert('Request failed: ' + error.message);
+    }
+  }
+
+  // Optimize Resume Content
+  async function optimizeContent() {
+    const content = document.getElementById('content_to_optimize').value.trim();
+    const output = document.getElementById('generated_bullets');
+    const loadingEl = document.getElementById('optimize_loading');
+
+    if (!content) {
+      alert('Please enter content to optimize');
+      return;
+    }
+
+    setLoading(loadingEl, true);
+    output.value = '';
+
+    try {
+      const response = await fetch('/api/ai/optimize-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resume_text: content,
+          job_description: '' // Optional: user can add this later
+        })
+      });
+
+      const data = await response.json();
+      setLoading(loadingEl, false);
+
+      if (response.ok) {
+        output.value = data.optimized_content;
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      setLoading(loadingEl, false);
+      alert('Request failed: ' + error.message);
+    }
+  }
+
+  // Improve Single Description
+  async function improveDescription() {
+    const description = document.getElementById('single_description').value.trim();
+    const resultEl = document.getElementById('improved_result');
+    const loadingEl = document.getElementById('improve_loading');
+
+    if (!description) {
+      alert('Please enter a description to improve');
+      return;
+    }
+
+    setLoading(loadingEl, true);
+    resultEl.style.display = 'none';
+
+    try {
+      const response = await fetch('/api/ai/improve-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: description })
+      });
+
+      const data = await response.json();
+      setLoading(loadingEl, false);
+
+      if (response.ok) {
+        resultEl.innerHTML = '<strong>Improved:</strong> ' + data.improved_description;
+        resultEl.style.display = 'block';
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      setLoading(loadingEl, false);
+      alert('Request failed: ' + error.message);
+    }
+  }
+
+  // Extract Skills
+  async function extractSkills() {
+    const jobDesc = document.getElementById('job_description').value.trim();
+    const skillsContainer = document.getElementById('extracted_skills');
+    const loadingEl = document.getElementById('extract_loading');
+
+    if (!jobDesc) {
+      alert('Please paste a job description');
+      return;
+    }
+
+    setLoading(loadingEl, true);
+    skillsContainer.innerHTML = '';
+
+    try {
+      const response = await fetch('/api/ai/extract-skills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_description: jobDesc,
+          category: 'all'
+        })
+      });
+
+      const data = await response.json();
+      setLoading(loadingEl, false);
+
+      if (response.ok) {
+        const skills = data.skills || [];
+        if (skills.length === 0) {
+          skillsContainer.innerHTML = '<p style="color: #999; font-size: 12px;">No skills extracted</p>';
+        } else {
+          skillsContainer.innerHTML = skills
+            .map(skill => `<span class="skill-tag">${skill}</span>`)
+            .join('');
+        }
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      setLoading(loadingEl, false);
+      alert('Request failed: ' + error.message);
+    }
+  }
+
+  // Generate Profile Summary
+  async function generateSummary() {
+    const name = document.getElementById('summary_name').value.trim();
+    const title = document.getElementById('summary_title').value.trim();
+    const years = parseInt(document.getElementById('summary_years').value) || 0;
+    const output = document.getElementById('generated_summary');
+    const loadingEl = document.getElementById('summary_loading');
+
+    if (!name || !title) {
+      alert('Please enter your name and target job title');
+      return;
+    }
+
+    setLoading(loadingEl, true);
+    output.value = '';
+
+    try {
+      const response = await fetch('/api/ai/generate-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          job_title: title,
+          years_experience: years,
+          skills: [] // Optional: user can add skills
+        })
+      });
+
+      const data = await response.json();
+      setLoading(loadingEl, false);
+
+      if (response.ok) {
+        output.value = data.summary;
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      setLoading(loadingEl, false);
+      alert('Request failed: ' + error.message);
+    }
+  }
+
+  // Summarize Text
+  async function summarizeText() {
+    const text = (document.getElementById('summarize_text').value || '').trim();
+    const kind = document.getElementById('summarize_kind').value;
+    const maxSentences = parseInt(document.getElementById('summarize_sentences').value) || 2;
+    const output = document.getElementById('summarize_output');
+    const loadingEl = document.getElementById('summarize_loading');
+
+    if (!text) {
+      alert('Please enter text to summarize');
+      return;
+    }
+
+    setLoading(loadingEl, true);
+    output.value = '';
+
+    try {
+      const response = await fetch('/api/ai/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: text,
+          kind: kind,
+          max_sentences: maxSentences
+        })
+      });
+
+      const data = await response.json();
+      setLoading(loadingEl, false);
+
+      if (response.ok) {
+        output.value = data.summary || '';
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      setLoading(loadingEl, false);
+      alert('Request failed: ' + error.message);
+    }
+  }
+</script>

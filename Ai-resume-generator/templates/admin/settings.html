@@ -1,0 +1,99 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+{% block page_subtitle %}Stored in database (env vars still work){% endblock %}
+{% block content %}
+  <div class="card admin-card p-3">
+    <form method="post" class="row g-3">
+      <div class="col-12">
+        <label class="form-label fw-semibold">Maintenance mode</label>
+        <select name="maintenance_mode" class="form-select">
+          <option value="0" {% if values.maintenance_mode != '1' %}selected{% endif %}>Off</option>
+          <option value="1" {% if values.maintenance_mode == '1' %}selected{% endif %}>On</option>
+        </select>
+        <div class="form-text">Blocks resume generation + AI endpoints for non-admins.</div>
+      </div>
+
+      <div class="col-12"><hr class="my-1"></div>
+
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">SMTP Host</label>
+        <input class="form-control" name="smtp_host" value="{{ values.smtp_host }}" placeholder="smtp.gmail.com" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">SMTP Port</label>
+        <input class="form-control" name="smtp_port" value="{{ values.smtp_port }}" placeholder="587" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">SMTP Username</label>
+        <input class="form-control" name="smtp_username" value="{{ values.smtp_username }}" placeholder="user@example.com" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">SMTP Password</label>
+        <input class="form-control" name="smtp_password" value="{{ values.smtp_password }}" placeholder="App password" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">SMTP Sender</label>
+        <input class="form-control" name="smtp_sender" value="{{ values.smtp_sender }}" placeholder="noreply@example.com" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Use TLS</label>
+        <select name="smtp_use_tls" class="form-select">
+          <option value="1" {% if values.smtp_use_tls != '0' %}selected{% endif %}>Yes</option>
+          <option value="0" {% if values.smtp_use_tls == '0' %}selected{% endif %}>No</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Use SSL</label>
+        <select name="smtp_use_ssl" class="form-select">
+          <option value="0" {% if values.smtp_use_ssl != '1' %}selected{% endif %}>No</option>
+          <option value="1" {% if values.smtp_use_ssl == '1' %}selected{% endif %}>Yes</option>
+        </select>
+      </div>
+
+      <div class="col-12"><hr class="my-1"></div>
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">AI Provider</label>
+        <select name="ai_provider" class="form-select">
+          <option value="" {% if not values.ai_provider %}selected{% endif %}>Auto (based on keys)</option>
+          <option value="groq" {% if values.ai_provider == 'groq' %}selected{% endif %}>Groq</option>
+          <option value="gemini" {% if values.ai_provider == 'gemini' %}selected{% endif %}>Gemini</option>
+          <option value="openai" {% if values.ai_provider == 'openai' %}selected{% endif %}>OpenAI</option>
+        </select>
+        <div class="form-text">If set, forces the provider. Otherwise the app uses the first configured key.</div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Groq Model</label>
+        <input class="form-control" name="groq_model" value="{{ values.groq_model }}" placeholder="llama-3.1-8b-instant" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Groq API Key</label>
+        <input type="password" class="form-control" name="groq_api_key" value="{{ values.groq_api_key }}" placeholder="gsk_..." />
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Gemini Model</label>
+        <input class="form-control" name="google_model" value="{{ values.google_model }}" placeholder="gemini-1.5-flash" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Gemini API Key</label>
+        <input type="password" class="form-control" name="google_api_key" value="{{ values.google_api_key }}" placeholder="your-gemini-api-key" />
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">OpenAI Model</label>
+        <input class="form-control" name="openai_model" value="{{ values.openai_model }}" placeholder="gpt-4o-mini" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">OpenAI API Key</label>
+        <input type="password" class="form-control" name="openai_api_key" value="{{ values.openai_api_key }}" placeholder="sk-..." />
+      </div>
+
+      <div class="col-12">
+        <button class="btn btn-gradient fw-semibold" type="submit">Save settings</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

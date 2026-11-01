@@ -1,0 +1,365 @@
+<style>
+  .tpl9, .tpl9 * { box-sizing: border-box; }
+  .tpl9 {
+    --tpl9-font-size: {{ (data.template_customizations.font_size if data.template_customizations else 13)|float }}px;
+    --tpl9-heading-color: {{ data.template_customizations.heading_color if data.template_customizations else '#1F4E79' }};
+    --tpl9-text-color: {{ data.template_customizations.text_color if data.template_customizations else '#111827' }};
+    --tpl9-section-spacing: {{ (data.template_customizations.section_spacing if data.template_customizations else 16)|float }}px;
+    --tpl9-line-height: {{ (data.template_customizations.line_height if data.template_customizations else 1.45)|float }};
+    --tpl9-page-padding: {{ (data.template_customizations.page_padding if data.template_customizations else 22)|float }}px;
+    --tpl9-left-padding: {{ (data.template_customizations.left_padding if data.template_customizations else 18)|float }}px;
+    --tpl9-right-padding: {{ (data.template_customizations.right_padding if data.template_customizations else 18)|float }}px;
+    --tpl9-heading-size: {{ (data.template_customizations.heading_size if data.template_customizations else 15)|float }}px;
+    --tpl9-header-background: {{ data.template_customizations.header_background if data.template_customizations else '#ffffff' }};
+    --tpl9-body-background: {{ data.template_customizations.body_background if data.template_customizations else '#ffffff' }};
+    --tpl9-photo-size: {{ (data.template_customizations.photo_size if data.template_customizations else 86)|float }}px;
+    --tpl9-photo-border: {{ (data.template_customizations.photo_border if data.template_customizations else 4)|float }}px;
+    --tpl9-photo-radius: {{ (data.template_customizations.photo_radius if data.template_customizations else 50)|float }};
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    background: var(--tpl9-body-background);
+    color: var(--tpl9-text-color);
+    padding: var(--tpl9-page-padding) var(--tpl9-right-padding) calc(var(--tpl9-page-padding) - 4px) var(--tpl9-left-padding);
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: var(--tpl9-font-size);
+    line-height: var(--tpl9-line-height);
+    overflow-wrap: anywhere;
+  }
+  .tpl9 .resume-template-badge { display: none; }
+  .tpl9 .header {
+    display: grid;
+    grid-template-columns: 1fr 92px;
+    gap: 20px;
+    align-items: start;
+    margin-bottom: 8px;
+  }
+  .tpl9 .resume-name {
+    margin: 0;
+    text-align: center;
+    font-size: 33px;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    color: var(--tpl9-text-color);
+  }
+  .tpl9 .resume-job-title {
+    margin: 4px 0 0;
+    text-align: center;
+    font-size: 13.5px;
+    line-height: 1.2;
+    font-weight: 600;
+    color: #4B5563;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .tpl9 .photo-wrap {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .tpl9 .photo {
+    width: var(--tpl9-photo-size);
+    height: var(--tpl9-photo-size);
+    border-radius: calc(var(--tpl9-photo-radius) * 1%);
+    object-fit: cover;
+    border: var(--tpl9-photo-border) solid #D1D5DB;
+    background: #ffffff;
+  }
+  .tpl9 .photo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4B5563;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .tpl9 .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(220px, 0.95fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .tpl9 .side-column {
+    background: var(--tpl9-header-background);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+  }
+  .tpl9 .side-column .section {
+    margin-top: 14px;
+  }
+  .tpl9 .main-column {
+    padding-left: 0;
+  }
+  .tpl9 .section {
+    margin-top: var(--tpl9-section-spacing);
+  }
+  .tpl9 .section-title {
+    margin: 0 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #D1D5DB;
+    color: var(--tpl9-heading-color);
+    font-size: var(--tpl9-heading-size);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .tpl9 .entry {
+    margin-bottom: 10px;
+  }
+  .tpl9 .entry-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: start;
+    margin-bottom: 2px;
+  }
+  .tpl9 .entry-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .tpl9 .entry-date {
+    font-size: 12.5px;
+    color: #4B5563;
+    text-align: right;
+    white-space: nowrap;
+    padding-right: 3px;
+  }
+  .tpl9 .entry-subhead {
+    margin-bottom: 4px;
+    color: #4B5563;
+    font-size: 12.5px;
+    font-style: italic;
+  }
+  .tpl9 a,
+  .tpl9 .resume-link-label {
+    color: #1d4ed8;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+  .tpl9 .bullet-list {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .tpl9 .bullet-list li {
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  .tpl9 .ats-justify li { text-align: justify; text-justify: inter-word; hyphens: auto; }
+  .tpl9 .contact-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tpl9 .contact-list li {
+    margin-bottom: 6px;
+    color: #4B5563;
+  }
+  .tpl9 .contact-list a,
+  .tpl9 .resume-link-label {
+    color: #1d4ed8;
+    text-decoration: underline;
+    border-bottom: 0;
+  }
+  .tpl9 .skills-group {
+    margin-bottom: 6px;
+    color: #4B5563;
+  }
+  .tpl9 .skills-group strong {
+    color: #111827;
+  }
+  .tpl9 .edu-line,
+  .tpl9 .edu-note,
+  .tpl9 .project-tech {
+    margin: 0;
+    color: #4B5563;
+  }
+  .tpl9 .project-tech {
+    margin-bottom: 4px;
+    font-size: 12.5px;
+  }
+  .tpl9 [data-canvas-section] { position: relative; }
+  .tpl9 .canvas-handle { display: none; position: absolute; top: 10px; right: 10px; }
+  @media (max-width: 991px) {
+    .tpl9 .header,
+    .tpl9 .layout,
+    .tpl9 .entry-head {
+      grid-template-columns: 1fr;
+    }
+    .tpl9 .photo-wrap {
+      justify-content: flex-start;
+    }
+    .tpl9 .entry-date {
+      text-align: left;
+      white-space: normal;
+    }
+  }
+</style>
+
+<div class="tpl9">
+  <div class="header">
+    <div>
+      <h1 class="resume-name" data-canvas-edit data-field="full_name">{{ data.full_name }}</h1>
+      {% if data.job_title %}<div class="resume-job-title" data-canvas-edit data-field="job_title">{{ data.job_title }}</div>{% endif %}
+      <p class="resume-template-badge">9</p>
+    </div>
+    {% if data.photo_src %}
+    <div class="photo-wrap">
+      <img src="{{ data.photo_src }}" alt="Profile photo" class="photo">
+    </div>
+    {% else %}
+    <div class="photo-wrap">
+      <div class="photo photo-placeholder">PHOTO</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="layout">
+    {% set orders = data.section_orders if data.section_orders else {} %}
+    {% set main_order = (orders.get('main') if orders else None) or ['summary', 'experience', 'projects'] %}
+    {% set side_order = (orders.get('side') if orders else None) or ['contact', 'education', 'skills', 'achievements'] %}
+
+    <div class="main-column" data-canvas-container="main">
+      {% for key in main_order %}
+        {% if key == 'summary' and data.summary %}
+        <section class="section" style="margin-top: 0;" draggable="true" data-canvas-section="summary">
+          <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+          <h5 class="section-title">Summary</h5>
+          <ul class="bullet-list">
+            {% for line in data.summary.split('\n') if line.strip() %}
+              {% set cleaned = line|clean_bullet %}
+              {% if cleaned %}<li data-canvas-edit>{{ cleaned }}</li>{% endif %}
+            {% endfor %}
+          </ul>
+        </section>
+        {% elif key == 'experience' and data.experience_desc %}
+        <section class="section" draggable="true" data-canvas-section="experience">
+          <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+          <h5 class="section-title">Experience</h5>
+          {% for block in data.experience_desc.split('\n\n') if block.strip() %}
+            {% set lines = block.split('\n') %}
+            {% set heading = (lines[0] if lines|length > 0 else '').replace('Experience ' ~ loop.index ~ ': ', '').replace('Experience 1: ', '').replace('Experience 2: ', '').replace('Experience 3: ', '').replace('Experience 4: ', '').replace('Experience 5: ', '') %}
+            {% set duration = (lines[1] if lines|length > 1 and lines[1].startswith('Duration: ') else '').replace('Duration: ', '') %}
+            {% set body = [] %}
+            {% for line in lines %}
+              {% if not loop.first and not (loop.index0 == 1 and line.startswith('Duration: ')) and line.strip() %}
+                {% set _ = body.append(line) %}
+              {% endif %}
+            {% endfor %}
+            {% set heading_parts = heading.split(' - ') %}
+            <div class="entry">
+              <div class="entry-head">
+                <div class="entry-title" data-canvas-edit>{{ heading_parts[1] if heading_parts|length > 1 else heading_parts[0] }}</div>
+                <div class="entry-date" data-canvas-edit>{{ duration }}</div>
+              </div>
+              <div class="entry-subhead" data-canvas-edit>{{ heading_parts[0] if heading_parts|length > 1 else data.job_title }}</div>
+              {% if body %}
+              <ul class="bullet-list ats-justify">
+                {% for line in body %}
+                {% set cleaned = line|clean_bullet %}
+                {% if cleaned %}<li data-canvas-edit>{{ cleaned }}</li>{% endif %}
+                {% endfor %}
+              </ul>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </section>
+        {% elif key == 'projects' and data.project_desc %}
+        <section class="section" draggable="true" data-canvas-section="projects">
+          <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+          <h5 class="section-title">Projects</h5>
+          {% for block in data.project_desc.split('\n\n') if block.strip() %}
+            {% set lines = block.split('\n') %}
+            {% set title = (lines[0] if lines|length > 0 else '').replace('Project ' ~ loop.index ~ ': ', '').replace('Project 1: ', '').replace('Project 2: ', '').replace('Project 3: ', '').replace('Project 4: ', '').replace('Project 5: ', '') %}
+            {% set tech = (lines[1] if lines|length > 1 and lines[1].startswith('Technologies: ') else '').replace('Technologies: ', '') %}
+            {% set body = [] %}
+            {% for line in lines %}
+              {% if not loop.first and not (loop.index0 == 1 and line.startswith('Technologies: ')) and line.strip() %}
+                {% set _ = body.append(line) %}
+              {% endif %}
+            {% endfor %}
+            <div class="entry">
+              <div class="entry-head">
+                <div class="entry-title" data-canvas-edit>{{ title }}</div>
+                <div class="entry-date" data-canvas-edit>{{ data.year }}</div>
+              </div>
+              {% if tech %}<p class="project-tech" data-canvas-edit>{{ tech }}</p>{% endif %}
+              {% if body %}
+              <ul class="bullet-list ats-justify">
+                {% for line in body %}
+                {% set cleaned = line|clean_bullet %}
+                {% if cleaned %}<li data-canvas-edit>{{ cleaned }}</li>{% endif %}
+                {% endfor %}
+              </ul>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </section>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <aside class="side-column" data-canvas-container="side">
+      {% for key in side_order %}
+        {% if key == 'contact' %}
+        <section class="section" style="margin-top: 0;" draggable="true" data-canvas-section="contact">
+          <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+          <h5 class="section-title">Contact</h5>
+          <ul class="contact-list">
+            {% if data.phone %}<li data-canvas-edit data-field="phone">{{ data.phone }}</li>{% endif %}
+            {% if data.email %}<li><a href="mailto:{{ data.email }}" data-canvas-edit data-field="email">{{ data.email }}</a></li>{% endif %}
+            {% if data.location %}<li data-canvas-edit data-field="location">{{ data.location }}</li>{% endif %}
+            {% if data.profile_link_items %}
+              {% for item in data.profile_link_items %}
+              {% set url_l = (item.url or '')|lower %}
+              {% set label = item.label or ('GitHub' if 'github.com' in url_l else ('LinkedIn' if 'linkedin.com' in url_l else 'Link')) %}
+              <li><a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ label }}</a></li>
+              {% endfor %}
+            {% endif %}
+          </ul>
+        </section>
+        {% elif key == 'education' %}
+        <section class="section" draggable="true" data-canvas-section="education">
+          <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+          <h5 class="section-title">Education</h5>
+          {% for entry in data.education_entries %}
+          <div class="entry">
+            <div class="entry-head">
+              <div class="entry-title">
+                {{ entry.degree }}
+                {% if entry.college %} - {{ entry.college }}{% endif %}
+                {% if entry.cgpa %} ({{ entry.cgpa }}){% endif %}
+              </div>
+              <div class="entry-date">{{ entry.year }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </section>
+        {% elif key == 'skills' %}
+        <section class="section" draggable="true" data-canvas-section="skills">
+          <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+          <h5 class="section-title">Skills</h5>
+          {% if data.technical_skills_grouped %}
+          <div class="skills-group preline" data-canvas-edit data-field="technical_skills_grouped"><strong>Technical Skills</strong><br>{{ data.technical_skills_grouped }}</div>
+          {% else %}
+          <div class="skills-group"><strong>Technical Skills</strong><br><span data-canvas-edit data-field="technical_skills">{{ data.technical_skills }}</span></div>
+          {% endif %}
+          {% if data.soft_skills %}<div class="skills-group"><strong>Soft Skills</strong><br><span data-canvas-edit data-field="soft_skills">{{ data.soft_skills }}</span></div>{% endif %}
+        </section>
+        {% elif key == 'achievements' and data.achievements %}
+        <section class="section" style="margin-top: 12px;" draggable="true" data-canvas-section="achievements">
+          <div class="canvas-handle" data-canvas-handle draggable="true" aria-label="Drag section" title="Drag section">⋮⋮</div>
+          <h5 class="section-title">Achievements</h5>
+          <ul class="bullet-list">
+            {% for line in data.achievements.split('\n') if line.strip() %}
+              {% if loop.index <= 6 %}
+              {% set cleaned = line|clean_bullet %}
+              {% if cleaned %}<li data-canvas-edit>{{ cleaned }}</li>{% endif %}
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
+      {% endfor %}
+    </aside>
+  </div>
+</div>

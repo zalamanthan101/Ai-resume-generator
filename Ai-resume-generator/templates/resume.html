@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resume Builder | AI Resume Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="app-bg">
+  <nav class="navbar navbar-expand-lg app-nav">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-white" href="{{ url_for('home') }}">AI Resume Generator</a>
+      <div class="d-flex align-items-center gap-3">
+        <a href="{{ url_for('home') }}" class="btn btn-outline-light fw-semibold">Back to Home</a>
+        <div class="dropdown">
+          <button class="profile-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {% if profile_photo_src %}
+            <img src="{{ profile_photo_src }}" alt="Profile" class="profile-btn-image">
+            {% else %}
+            {{ user.email[0].upper() }}
+            {% endif %}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><h6 class="dropdown-header">{{ user.email }}</h6></li>
+            <li><a class="dropdown-item" href="{{ url_for('account') }}">My Account</a></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div class="panel-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Resume Builder</h2>
+        <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+          <span class="text-muted small">Fill details once and export anytime</span>
+          <form method="post" action="{{ url_for('import_resume') }}" enctype="multipart/form-data" class="d-flex align-items-center">
+            <input type="file" name="resume_file" accept=".pdf,.docx,.txt" class="d-none" id="resume-import-input" />
+            <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" id="resume-import-btn">Upload Resume</button>
+          </form>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="mb-3">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show app-alert" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <form method="post" action="{{ url_for('preview_resume') }}" id="resume-form" enctype="multipart/form-data">
+        <div class="form-text mb-3"><span class="required-field">Fields marked</span> are required.</div>
+        <p class="text-muted small mb-2">All important fields are mandatory (except Middle Name).</p>
+        <h5 class="form-section-title">Personal Information</h5>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <label class="form-label required-field">First Name</label>
+            <input type="text" name="first_name" value="{{ saved_resume.first_name or '' }}" class="form-control" placeholder="First name" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Middle Name</label>
+            <input type="text" name="middle_name" value="{{ saved_resume.middle_name or '' }}" class="form-control" placeholder="Middle name (optional)">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label required-field">Last Name</label>
+            <input type="text" name="last_name" value="{{ saved_resume.last_name or '' }}" class="form-control" placeholder="Last name" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required-field">Email</label>
+            <input type="email" name="email" value="{{ saved_resume.email or '' }}" class="form-control" placeholder="you@example.com" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required-field">Phone</label>
+            <input type="text" name="phone" value="{{ saved_resume.phone or '' }}" class="form-control" placeholder="+1 555-0102" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required-field">City, State</label>
+            <input type="text" name="location" value="{{ saved_resume.location or '' }}" class="form-control" placeholder="City, State" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required-field">Job Title</label>
+            <input type="text" name="job_title" value="{{ saved_resume.job_title or '' }}" class="form-control" placeholder="e.g., Software Developer" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Experience</label>
+            <div class="input-group">
+              <input
+                type="number"
+                name="experience_value"
+                id="experience-value"
+                value="{% if has_saved_resume %}{{ saved_resume.experience_value or '' }}{% endif %}"
+                class="form-control"
+                min="0"
+                step="1"
+                placeholder="0">
+              <select name="experience_unit" id="experience-unit" class="form-select">
+                {% set experience_unit = (saved_resume.experience_unit if has_saved_resume else 'none') or 'none' %}
+                <option value="none" {% if experience_unit == 'none' %}selected{% endif %}>No experience</option>
+                <option value="years" {% if experience_unit == 'years' %}selected{% endif %}>Years</option>
+                <option value="months" {% if experience_unit == 'months' %}selected{% endif %}>Months</option>
+                <option value="days" {% if experience_unit == 'days' %}selected{% endif %}>Days</option>
+              </select>
+            </div>
+            <div class="form-text">Choose "No experience" if fresher.</div>
+          </div>
+          <div class="col-md-12">
+            <label class="form-label">LinkedIn / GitHub / Portfolio</label>
+            <div class="link-builder mb-2">
+              <div class="input-group">
+                <select id="profile-type" class="form-select">
+                  <option value="LinkedIn">LinkedIn</option>
+                  <option value="GitHub" selected>GitHub</option>
+                  <option value="Portfolio">Portfolio</option>
+                </select>
+                <input type="url" id="profile-url-input" class="form-control" placeholder="https://github.com/username">
+                <button type="button" class="btn btn-outline-primary" id="add-profile-link">+ Add</button>
+              </div>
+            </div>
+            <div id="profile-link-list" class="d-grid gap-2"></div>
+            <input type="hidden" name="profile_links" id="profile-links-hidden">
+          </div>
+          <div class="col-md-12" id="photo-upload-section">
+            <label class="form-label">Profile Photo</label>
+            <input type="file" name="photo" id="photo-input" class="form-control" accept=".png,.jpg,.jpeg,.webp">
+            <div class="form-text" id="photo-help-text">
+              Optional. Required only for Templates 8 and 9. Max size: 1 MB. Supported: PNG, JPG, JPEG, WEBP.
+              {% if saved_resume.photo_filename %}A saved profile photo is already available.{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <h5 class="form-section-title">Professional Summary</h5>
+        <textarea name="summary" rows="3" class="form-control" placeholder="2–4 lines highlighting your strengths, role, and impact" required>{% if has_saved_resume %}{{ saved_resume.summary }}{% endif %}</textarea>
+        <input type="text" id="ai-summary-prompt" class="form-control mt-2" placeholder="Optional AI prompt (e.g., emphasize backend APIs, ATS keywords, leadership).">
+        <div class="d-flex align-items-center gap-2 mt-2">
+          <button type="button" class="btn btn-sm btn-outline-dark" id="ai-summary-btn">AI Summary</button>
+          <span class="text-muted small" id="ai-summary-status" aria-live="polite"></span>
+        </div>
+
+        <div class="form-section-title d-flex justify-content-between align-items-center">
+          <span>Education</span>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="add-education">+ Add Education</button>
+        </div>
+        <div id="education-list" class="d-grid gap-2"></div>
+
+        <h5 class="form-section-title">Skills</h5>
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label required-field">Technical Skills</label>
+            <div class="skill-entry mb-2">
+              <div class="input-group">
+                <input type="text" id="technical-skill-input" class="form-control" placeholder="e.g., Python, React, SQL">
+                <button type="button" class="btn btn-outline-primary skill-plus-btn" id="add-technical-skill">+</button>
+              </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+              <div class="form-text mb-0">Add skills one by one. Use + or Enter.</div>
+              <button type="button" class="btn btn-sm btn-outline-danger" id="clear-technical-skills">Remove all</button>
+            </div>
+            <div id="technical-skill-tags" class="skill-tags"></div>
+            <textarea name="technical_skills" id="technical-skills-hidden" rows="3" class="form-control d-none" required>{% if has_saved_resume %}{{ saved_resume.technical_skills }}{% endif %}</textarea>
+            <div class="mt-3">
+              <div class="d-flex align-items-center justify-content-between gap-2">
+                <label class="form-label mb-0">Technical Skills (ATS Format)</label>
+                <button type="button" class="btn btn-sm btn-outline-dark" id="ai-organize-technical-skills">AI Organize</button>
+              </div>
+              <input type="text" class="form-control form-control-sm mt-2" id="ai-organize-technical-prompt" placeholder="Optional prompt (e.g., focus on backend + data)"/>
+              <textarea name="technical_skills_grouped" id="technical-skills-grouped" rows="6" class="form-control mt-2" placeholder="Languages: ...&#10;Frameworks: ...">{% if has_saved_resume %}{{ saved_resume.technical_skills_grouped or '' }}{% endif %}</textarea>
+              <div class="form-text">Optional. If filled, templates will display this formatted version for better ATS readability.</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required-field">Soft Skills</label>
+            <div class="skill-entry mb-2">
+              <div class="input-group">
+                <input type="text" id="soft-skill-input" class="form-control" placeholder="e.g., Communication, Leadership">
+                <button type="button" class="btn btn-outline-primary skill-plus-btn" id="add-soft-skill">+</button>
+              </div>
+            </div>
+            <div id="soft-skill-tags" class="skill-tags"></div>
+            <textarea name="soft_skills" id="soft-skills-hidden" rows="3" class="form-control d-none" required>{% if has_saved_resume %}{{ saved_resume.soft_skills }}{% endif %}</textarea>
+          </div>
+        </div>
+
+        <div class="form-section-title d-flex justify-content-between align-items-center">
+          <span>Projects</span>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="add-project">+ Add Project</button>
+        </div>
+        <div id="project-list" class="d-grid gap-2"></div>
+
+        <div class="form-section-title d-flex justify-content-between align-items-center mt-3">
+          <span>Experience / Internship</span>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="add-experience">+ Add Experience</button>
+        </div>
+        <div id="experience-list" class="d-grid gap-2"></div>
+
+        <div class="form-section-title d-flex justify-content-between align-items-center mt-3">
+          <span>Achievements / Certifications</span>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="add-achievement">+ Add Achievement</button>
+        </div>
+        <div id="achievement-list" class="d-grid gap-2"></div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <button type="button" class="btn btn-outline-primary px-4" id="save-details">Save Details</button>
+          <button type="button" class="btn btn-gradient px-4" data-bs-toggle="modal" data-bs-target="#previewModal">Preview</button>
+        </div>
+
+        <input type="hidden" name="selected_template" id="selected-template" value="{{ saved_resume.selected_template or '1' }}">
+      </form>
+    </div>
+  </main>
+
+  <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="previewModalLabel">Preview Templates</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2 fw-semibold">Choose Template</p>
+          <div class="template-grid">
+            <label class="template-option">
+              <input type="radio" name="template_choice" value="1" {% if (saved_resume.selected_template or '1') == '1' %}checked{% endif %}>
+              <div class="template-thumb template-thumb-classic">
+                <div class="thumb-name" data-preview="name">Your Name</div>
+                <div class="thumb-role" data-preview="role">Professional Title</div>
+                <div class="thumb-line"></div>
+                <div class="thumb-row align-start">
+                  <div class="thumb-col left text-start">
+                    <div class="thumb-section">CONTACT</div>
+                    <div class="thumb-txt" data-preview="contact">email | phone</div>
+                    <div class="thumb-section mt-1">SKILLS</div>
+                    <div class="thumb-txt" data-preview="skills">Python, Communication</div>
+                  </div>
+                  <div class="thumb-col right text-start">
+                    <div class="thumb-section">PROFILE</div>
+                    <div class="thumb-txt" data-preview="summary">Short professional summary...</div>
+                  </div>
+                </div>
+              </div>
+              <span class="template-name">1</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template_choice" value="2" {% if (saved_resume.selected_template or '1') == '2' %}checked{% endif %}>
+              <div class="template-thumb template-thumb-executive">
+                <div class="thumb-row align-start">
+                  <div class="thumb-col wide text-start">
+                    <div class="thumb-name blue" data-preview="name">Your Name</div>
+                    <div class="thumb-txt" data-preview="summary">Short professional summary...</div>
+                  </div>
+                  <div class="thumb-col slim text-start">
+                    <div class="thumb-section blue">CONTACT</div>
+                    <div class="thumb-txt" data-preview="contact">email | phone</div>
+                  </div>
+                </div>
+                <div class="thumb-line blue-line"></div>
+                <div class="thumb-section blue text-start">WORK EXPERIENCE</div>
+                <div class="thumb-txt text-start" data-preview="experience">Experience details...</div>
+                <div class="thumb-row mt-1">
+                  <div class="thumb-col text-start">
+                    <div class="thumb-section blue">EDUCATION</div>
+                    <div class="thumb-txt" data-preview="education">Degree - College</div>
+                  </div>
+                  <div class="thumb-col text-start">
+                    <div class="thumb-section blue">SKILLS</div>
+                    <div class="thumb-txt" data-preview="skills">Python, Communication</div>
+                  </div>
+                </div>
+              </div>
+              <span class="template-name">2</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template_choice" value="3" {% if (saved_resume.selected_template or '1') == '3' %}checked{% endif %}>
+              <div class="template-thumb template-thumb-compact">
+                <div class="thumb-name compact-name" data-preview="name">Your Name</div>
+                <div class="thumb-role compact-role" data-preview="role">Professional Title</div>
+                <div class="thumb-line"></div>
+                <div class="thumb-section text-start">SUMMARY</div>
+                <div class="thumb-txt text-start" data-preview="summary">Short professional summary...</div>
+                <div class="thumb-section text-start mt-1">PROJECTS</div>
+                <div class="thumb-txt text-start" data-preview="projects">Project details...</div>
+                <div class="thumb-section text-start mt-1">SKILLS</div>
+                <div class="thumb-txt text-start" data-preview="skills">Python, Communication</div>
+              </div>
+              <span class="template-name">3</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template_choice" value="4" {% if (saved_resume.selected_template or '1') == '4' %}checked{% endif %}>
+              <div class="template-thumb template-thumb-sidebar">
+                <div class="thumb-row align-start no-gap">
+                  <div class="thumb-col left dark-panel">
+                    <div class="thumb-name light" data-preview="name">Your Name</div>
+                    <div class="thumb-role light" data-preview="role">Professional Title</div>
+                    <div class="thumb-section light mt-1">CONTACT</div>
+                    <div class="thumb-txt light" data-preview="contact">email | phone</div>
+                  </div>
+                  <div class="thumb-col right text-start">
+                    <div class="thumb-section">SUMMARY</div>
+                    <div class="thumb-txt" data-preview="summary">Short professional summary...</div>
+                    <div class="thumb-section mt-1">PROJECTS</div>
+                    <div class="thumb-txt" data-preview="projects">Project details...</div>
+                  </div>
+                </div>
+              </div>
+              <span class="template-name">4</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template_choice" value="5" {% if (saved_resume.selected_template or '1') == '5' %}checked{% endif %}>
+              <div class="template-thumb template-thumb-banner">
+                <div class="thumb-banner">
+                  <div class="thumb-name" data-preview="name">Your Name</div>
+                  <div class="thumb-role" data-preview="role">Professional Title</div>
+                </div>
+                <div class="thumb-row mt-1">
+                  <div class="thumb-col text-start"><div class="thumb-section">SUMMARY</div><div class="thumb-txt" data-preview="summary">Short professional summary...</div></div>
+                  <div class="thumb-col text-start"><div class="thumb-section">SKILLS</div><div class="thumb-txt" data-preview="skills">Python, Communication</div></div>
+                </div>
+                <div class="thumb-line"></div>
+              </div>
+              <span class="template-name">5</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template_choice" value="6" {% if (saved_resume.selected_template or '1') == '6' %}checked{% endif %}>
+              <div class="template-thumb template-thumb-split">
+                <div class="thumb-row align-start">
+                  <div class="thumb-col wide text-start">
+                    <div class="thumb-name" data-preview="name">Your Name</div>
+                    <div class="thumb-role" data-preview="role">Professional Title</div>
+                  </div>
+                  <div class="thumb-col slim text-start">
+                    <div class="thumb-txt" data-preview="contact">email | phone</div>
+                  </div>
+                </div>
+                <div class="thumb-row mt-1">
+                  <div class="thumb-col left text-start"><div class="thumb-section">WORK</div><div class="thumb-txt" data-preview="experience">Experience details...</div></div>
+                  <div class="thumb-col right text-start"><div class="thumb-section">SUMMARY</div><div class="thumb-txt" data-preview="summary">Short professional summary...</div></div>
+                </div>
+              </div>
+              <span class="template-name">6</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template_choice" value="7" {% if (saved_resume.selected_template or '1') == '7' %}checked{% endif %}>
+              <div class="template-thumb template-thumb-minimal">
+                <div class="thumb-name" data-preview="name">Your Name</div>
+                <div class="thumb-role" data-preview="role">Professional Title</div>
+                <div class="thumb-line thin-line"></div>
+                <div class="thumb-section text-start">PROFILE</div>
+                <div class="thumb-txt text-start" data-preview="summary">Short professional summary...</div>
+                <div class="thumb-row mt-1">
+                  <div class="thumb-col text-start"><div class="thumb-section">EXP</div><div class="thumb-txt" data-preview="experience">Experience details...</div></div>
+                  <div class="thumb-col text-start"><div class="thumb-section">EDU</div><div class="thumb-txt" data-preview="education">Degree - College</div></div>
+                </div>
+              </div>
+              <span class="template-name">7</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template_choice" value="8" {% if (saved_resume.selected_template or '1') == '8' %}checked{% endif %}>
+              <div class="template-thumb template-thumb-timeline">
+                <div class="thumb-name" data-preview="name">Your Name</div>
+                <div class="thumb-role" data-preview="role">Professional Title</div>
+                <div class="thumb-timeline"></div>
+                <div class="thumb-section text-start">SUMMARY</div>
+                <div class="thumb-txt text-start" data-preview="summary">Short professional summary...</div>
+                <div class="thumb-section text-start mt-1">ACHIEVEMENTS</div>
+                <div class="thumb-txt text-start" data-preview="experience">Experience details...</div>
+              </div>
+              <span class="template-name">8</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template_choice" value="9" {% if (saved_resume.selected_template or '1') == '9' %}checked{% endif %}>
+              <div class="template-thumb template-thumb-cards">
+                <div class="thumb-name" data-preview="name">Your Name</div>
+                <div class="thumb-role" data-preview="role">Professional Title</div>
+                <div class="thumb-card-grid">
+                  <div class="mini-card"></div>
+                  <div class="mini-card"></div>
+                  <div class="mini-card"></div>
+                  <div class="mini-card"></div>
+                </div>
+              </div>
+              <span class="template-name">9</span>
+            </label>
+          </div>
+
+          <p class="mb-2 mt-3 fw-semibold">Export Option</p>
+          <div class="export-only-card">
+            <div class="fw-semibold">PDF only</div>
+            <div class="text-muted small">Preview and download use the same layout.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-outline-primary" id="open-selected-preview">Open Preview</button>
+          <button type="button" class="btn btn-gradient" id="confirm-export">Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <template id="project-template">
+    <div class="repeat-card">
+      <div class="row g-2">
+        <div class="col-md-6">
+          <label class="form-label required-field">Project Title</label>
+          <input type="text" name="project_title[]" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label required-field">Technologies</label>
+          <input type="text" name="project_tech[]" class="form-control" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Description</label>
+          <textarea name="project_desc[]" rows="3" class="form-control" placeholder="Optional. Leave blank to auto-generate with AI."></textarea>
+          <input type="text" class="form-control mt-2" data-ai-prompt placeholder="Optional AI prompt for this project (e.g., focus on impact, performance).">
+          <div class="d-flex align-items-center gap-2 mt-2">
+            <button type="button" class="btn btn-sm btn-outline-dark" data-ai-action="project">AI Summary</button>
+            <span class="text-muted small" data-ai-status aria-live="polite"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="education-template">
+    <div class="repeat-card">
+      <div class="row g-2">
+        <div class="col-md-6">
+          <label class="form-label required-field">Degree</label>
+          <input type="text" name="degree[]" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label required-field">College / University</label>
+          <input type="text" name="college[]" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label required-field">Year of Passing</label>
+          <input type="text" name="year[]" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label required-field">Score</label>
+          <div class="input-group">
+            <select name="score_type[]" class="form-select" style="max-width: 140px;">
+              <option value="CGPA" selected>CGPA</option>
+              <option value="SGPA">SGPA</option>
+              <option value="Percentage">Percentage</option>
+            </select>
+            <input type="text" name="score_value[]" class="form-control" placeholder="e.g., 7 or 85" required>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="experience-template">
+    <div class="repeat-card">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="form-label">Role</label>
+          <input type="text" name="role[]" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Company</label>
+          <input type="text" name="company[]" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Duration</label>
+          <input type="text" name="duration[]" class="form-control">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Responsibilities</label>
+          <textarea name="experience_desc[]" rows="3" class="form-control"></textarea>
+          <input type="text" class="form-control mt-2" data-ai-prompt placeholder="Optional AI prompt for this experience (e.g., highlight metrics, teamwork).">
+          <div class="d-flex align-items-center gap-2 mt-2">
+            <button type="button" class="btn btn-sm btn-outline-dark" data-ai-action="experience">AI Summary</button>
+            <span class="text-muted small" data-ai-status aria-live="polite"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="achievement-template">
+    <div class="repeat-card">
+      <label class="form-label">Achievement</label>
+      <input type="text" name="achievement_item[]" class="form-control">
+    </div>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script>
+    const savedResume = {{ saved_resume|tojson }};
+    const hasExistingPhoto = {{ 'true' if saved_resume.photo_filename else 'false' }};
+    const hasSavedResume = {{ 'true' if has_saved_resume else 'false' }};
+
+    (function wireResumeImport() {
+      const input = document.getElementById('resume-import-input');
+      const button = document.getElementById('resume-import-btn');
+      if (!input || !button) return;
+      button.addEventListener('click', () => input.click());
+      input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        button.closest('form')?.submit();
+      });
+    })();
+
+
+    function escapeHtml(text) {
+      return (text || '').replace(/[&<>"']/g, function (char) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return map[char];
+      });
+    }
+
+    function syncProfileLinks() {
+      const rows = document.querySelectorAll('#profile-link-list .profile-link-row');
+      const combined = [];
+      rows.forEach((row) => {
+        const type = row.querySelector('[data-role="type"]').value.trim();
+        const url = row.querySelector('[data-role="url"]').value.trim();
+        if (url) {
+          combined.push(type ? `${type}: ${url}` : url);
+        }
+      });
+      document.getElementById('profile-links-hidden').value = combined.join(' | ');
+    }
+
+    function addProfileLink(type, url) {
+      const profileList = document.getElementById('profile-link-list');
+      const safeType = (type || '').trim();
+      const safeUrl = (url || '').trim();
+      if (!safeUrl) {
+        return;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'repeat-card profile-link-row';
+      row.innerHTML = `
+        <div class="row g-2 align-items-center">
+          <div class="col-md-3">
+            <input type="text" class="form-control" data-role="type" value="${escapeHtml(safeType)}" readonly>
+          </div>
+          <div class="col-md-8">
+            <input type="url" class="form-control" data-role="url" value="${escapeHtml(safeUrl)}">
+          </div>
+          <div class="col-md-1 d-grid">
+            <button type="button" class="btn btn-outline-danger btn-sm">Remove</button>
+          </div>
+        </div>
+      `;
+
+      row.querySelector('[data-role="url"]').addEventListener('input', syncProfileLinks);
+      row.querySelector('button').addEventListener('click', () => {
+        row.remove();
+        syncProfileLinks();
+      });
+
+      profileList.appendChild(row);
+      syncProfileLinks();
+    }
+
+    function syncTechnicalSkills() {
+      const skills = Array.from(document.querySelectorAll('#technical-skill-tags .skill-tag-text')).map((el) => el.textContent.trim()).filter(Boolean);
+      document.getElementById('technical-skills-hidden').value = skills.join(', ');
+    }
+
+    function addTechnicalSkill(rawSkill) {
+      const skill = (rawSkill || '').trim();
+      if (!skill) return;
+
+      const tagContainer = document.getElementById('technical-skill-tags');
+      const existing = Array.from(tagContainer.querySelectorAll('.skill-tag-text')).map((el) => el.textContent.toLowerCase());
+      if (existing.includes(skill.toLowerCase())) {
+        return;
+      }
+
+      const chip = document.createElement('span');
+      chip.className = 'skill-tag';
+      chip.innerHTML = `<span class="skill-tag-text">${escapeHtml(skill)}</span><button type="button" class="skill-tag-remove" aria-label="Remove skill">&times;</button>`;
+      chip.querySelector('.skill-tag-remove').addEventListener('click', () => {
+        chip.remove();
+        syncTechnicalSkills();
+      });
+
+      tagContainer.appendChild(chip);
+      syncTechnicalSkills();
+    }
+
+    function syncSoftSkills() {
+      const skills = Array.from(document.querySelectorAll('#soft-skill-tags .skill-tag-text')).map((el) => el.textContent.trim()).filter(Boolean);
+      document.getElementById('soft-skills-hidden').value = skills.join(', ');
+    }
+
+    function addSoftSkill(rawSkill) {
+      const skill = (rawSkill || '').trim();
+      if (!skill) return;
+
+      const tagContainer = document.getElementById('soft-skill-tags');
+      const existing = Array.from(tagContainer.querySelectorAll('.skill-tag-text')).map((el) => el.textContent.toLowerCase());
+      if (existing.includes(skill.toLowerCase())) {
+        return;
+      }
+
+      const chip = document.createElement('span');
+      chip.className = 'skill-tag';
+      chip.innerHTML = `<span class="skill-tag-text">${escapeHtml(skill)}</span><button type="button" class="skill-tag-remove" aria-label="Remove skill">&times;</button>`;
+      chip.querySelector('.skill-tag-remove').addEventListener('click', () => {
+        chip.remove();
+        syncSoftSkills();
+      });
+
+      tagContainer.appendChild(chip);
+      syncSoftSkills();
+    }
+
+    function validateMandatoryFields() {
+      const requiredChecks = [
+        { id: 'technical-skills-hidden', label: 'At least one technical skill' },
+        { id: 'soft-skills-hidden', label: 'At least one soft skill' }
+      ];
+
+      const missing = requiredChecks
+        .filter((item) => !((document.getElementById(item.id).value || '').trim()))
+        .map((item) => item.label);
+
+      if (missing.length) {
+        alert(`Please fill these mandatory fields:\n- ${missing.join('\n- ')}`);
+        return false;
+      }
+      return true;
+    }
+
+    function validateTemplateRequirements(templateValue) {
+      if ((templateValue === '8' || templateValue === '9') && !document.getElementById('photo-input').files.length && !hasExistingPhoto) {
+        focusPhotoUpload();
+        return false;
+      }
+      return true;
+    }
+
+    function focusPhotoUpload() {
+      const photoSection = document.getElementById('photo-upload-section');
+      const photoInput = document.getElementById('photo-input');
+      const helpText = document.getElementById('photo-help-text');
+      const previewModalEl = document.getElementById('previewModal');
+      const previewModal = bootstrap.Modal.getInstance(previewModalEl);
+
+      if (previewModal) {
+        previewModal.hide();
+      }
+
+      helpText.textContent = 'Please choose photo first. This template requires a photo.';
+      helpText.classList.add('text-danger');
+      photoSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      photoInput.focus();
+    }
+
+    document.getElementById('photo-input').addEventListener('change', function () {
+      const file = this.files && this.files[0];
+      const helpText = document.getElementById('photo-help-text');
+      if (file && file.size > 1_000_000) {
+        helpText.textContent = 'Photo size must be 1 MB or less.';
+        helpText.classList.add('text-danger');
+        this.value = '';
+        return;
+      }
+      helpText.textContent = 'Optional. Required only for Templates 8 and 9. Max size: 1 MB. Supported: PNG, JPG, JPEG, WEBP.';
+      helpText.classList.remove('text-danger');
+    });
+
+    if (window.location.hash === '#photo-upload-section') {
+      setTimeout(focusPhotoUpload, 150);
+    }
+
+    function addItem(listId, templateId, defaults, minItems = 1, insertAtTop = false) {
+      const list = document.getElementById(listId);
+      const template = document.getElementById(templateId).content.cloneNode(true);
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(template);
+      const card = wrapper.firstElementChild;
+
+      if (insertAtTop && list.firstElementChild) {
+        list.insertBefore(card, list.firstElementChild);
+      } else {
+        list.appendChild(card);
+      }
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn btn-sm btn-outline-danger mt-2';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => {
+        if (list.children.length > minItems) {
+          card.remove();
+        }
+      });
+      card.appendChild(removeBtn);
+
+      if (defaults) {
+        Object.keys(defaults).forEach((name) => {
+          const el = card.querySelector(`[name="${name}"]`);
+          if (el) el.value = defaults[name];
+        });
+      }
+    }
+
+    document.getElementById('add-education').addEventListener('click', function () {
+      addItem('education-list', 'education-template', null, 1, true);
+    });
+
+    document.getElementById('add-project').addEventListener('click', function () {
+      addItem('project-list', 'project-template', null, 0, true);
+    });
+
+    document.getElementById('add-experience').addEventListener('click', function () {
+      addItem('experience-list', 'experience-template', null, 0, true);
+    });
+
+    document.getElementById('add-achievement').addEventListener('click', function () {
+      addItem('achievement-list', 'achievement-template', null, 0, true);
+    });
+
+    document.getElementById('save-details').addEventListener('click', async function () {
+      const form = document.getElementById('resume-form');
+      syncProfileLinks();
+      syncTechnicalSkills();
+      syncSoftSkills();
+      if (!validateMandatoryFields()) {
+        return;
+      }
+      await ensureProjectDescriptions();
+      form.action = '{{ url_for("save_resume") }}';
+      form.requestSubmit();
+    });
+
+    document.getElementById('add-profile-link').addEventListener('click', function () {
+      const typeEl = document.getElementById('profile-type');
+      const urlEl = document.getElementById('profile-url-input');
+      addProfileLink(typeEl.value, urlEl.value);
+      urlEl.value = '';
+      urlEl.focus();
+    });
+
+    document.getElementById('profile-url-input').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        document.getElementById('add-profile-link').click();
+      }
+    });
+
+    const technicalInput = document.getElementById('technical-skill-input');
+    document.getElementById('add-technical-skill').addEventListener('click', function () {
+      addTechnicalSkill(technicalInput.value);
+      technicalInput.value = '';
+      technicalInput.focus();
+    });
+
+    document.getElementById('clear-technical-skills')?.addEventListener('click', function () {
+      if (!confirm('Remove all technical skills?')) return;
+      const tagContainer = document.getElementById('technical-skill-tags');
+      if (tagContainer) tagContainer.innerHTML = '';
+      syncTechnicalSkills();
+      const grouped = document.getElementById('technical-skills-grouped');
+      if (grouped && !(grouped.value || '').trim()) {
+        grouped.value = '';
+      }
+    });
+
+    technicalInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        document.getElementById('add-technical-skill').click();
+      }
+    });
+
+    const softInput = document.getElementById('soft-skill-input');
+    document.getElementById('add-soft-skill').addEventListener('click', function () {
+      addSoftSkill(softInput.value);
+      softInput.value = '';
+      softInput.focus();
+    });
+
+    softInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        document.getElementById('add-soft-skill').click();
+      }
+    });
+
+    function parseEducationScore(rawScore) {
+      const value = (rawScore || '').toString().trim();
+      if (!value) {
+        return { type: 'CGPA', score: '' };
+      }
+      const upper = value.toUpperCase();
+      if (value.includes('%')) {
+        return { type: 'Percentage', score: value.replace('%', '').trim() };
+      }
+      if (upper.includes('PERCENT')) {
+        return { type: 'Percentage', score: value.replace(/percentage/i, '').trim() };
+      }
+      if (upper.includes('SGPA')) {
+        return { type: 'SGPA', score: value.replace(/sgpa/i, '').trim() };
+      }
+      if (upper.includes('CGPA')) {
+        return { type: 'CGPA', score: value.replace(/cgpa/i, '').trim() };
+      }
+      if (upper.includes('GPA')) {
+        return { type: 'CGPA', score: value.replace(/gpa/i, '').trim() };
+      }
+      return { type: 'CGPA', score: value };
+    }
+
+    const defaultEducationEntries = savedResume.education_entries && savedResume.education_entries.length
+      ? savedResume.education_entries
+      : (hasSavedResume ? [] : [{ degree: '', college: '', year: '', cgpa: '' }]);
+    defaultEducationEntries.forEach((entry) => {
+      const scoreParts = parseEducationScore(entry.cgpa || '');
+      addItem('education-list', 'education-template', {
+        'degree[]': entry.degree || '',
+        'college[]': entry.college || '',
+        'year[]': entry.year || '',
+        'score_type[]': scoreParts.type,
+        'score_value[]': scoreParts.score
+      }, 1);
+    });
+
+    const defaultProjects = savedResume.project_entries && savedResume.project_entries.length
+      ? savedResume.project_entries
+      : (hasSavedResume ? [] : [{ title: '', tech: '', desc: '' }]);
+    defaultProjects.forEach((entry) => {
+      addItem('project-list', 'project-template', {
+        'project_title[]': entry.title || '',
+        'project_tech[]': entry.tech || '',
+        'project_desc[]': entry.desc || ''
+      }, 0);
+    });
+
+    const defaultExperience = savedResume.experience_entries && savedResume.experience_entries.length
+      ? savedResume.experience_entries
+      : (hasSavedResume ? [] : [{ role: '', company: '', duration: '', desc: '' }]);
+    defaultExperience.forEach((entry) => {
+      addItem('experience-list', 'experience-template', {
+        'role[]': entry.role || '',
+        'company[]': entry.company || '',
+        'duration[]': entry.duration || '',
+        'experience_desc[]': entry.desc || ''
+      }, 0);
+    });
+
+    const defaultAchievements = savedResume.achievement_items && savedResume.achievement_items.length
+      ? savedResume.achievement_items
+      : (hasSavedResume ? [] : ['']);
+    defaultAchievements.forEach((item) => {
+      addItem('achievement-list', 'achievement-template', {
+        'achievement_item[]': item || ''
+      }, 0);
+    });
+
+    const defaultProfileLinks = savedResume.profile_link_items && savedResume.profile_link_items.length
+      ? savedResume.profile_link_items
+      : [];
+    defaultProfileLinks.forEach((item) => addProfileLink(item.type || 'Portfolio', item.url || ''));
+
+    const initialTechnicalSkills = (savedResume.technical_skill_items && savedResume.technical_skill_items.length
+      ? savedResume.technical_skill_items
+      : (document.getElementById('technical-skills-hidden').value || '')
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean));
+    initialTechnicalSkills.forEach((skill) => addTechnicalSkill(skill));
+
+    const initialSoftSkills = (savedResume.soft_skill_items && savedResume.soft_skill_items.length
+      ? savedResume.soft_skill_items
+      : (document.getElementById('soft-skills-hidden').value || '')
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean));
+    initialSoftSkills.forEach((skill) => addSoftSkill(skill));
+
+    document.getElementById('resume-form').addEventListener('submit', function (event) {
+      syncProfileLinks();
+      syncTechnicalSkills();
+      syncSoftSkills();
+      if (!validateMandatoryFields()) {
+        event.preventDefault();
+      }
+    });
+
+    function getValueByName(name) {
+      const el = document.querySelector(`[name="${name}"]`);
+      return el ? (el.value || '').trim() : '';
+    }
+
+    function getFirstNonEmpty(name) {
+      const values = Array.from(document.querySelectorAll(`[name="${name}"]`)).map((el) => (el.value || '').trim());
+      return values.find((val) => val) || '';
+    }
+
+    const LIVE_PREVIEW_BASE_WIDTH = 794;
+    const LIVE_PREVIEW_BASE_HEIGHT = 1123;
+
+    function ensureLiveTemplateThumb(thumbEl) {
+      if (!thumbEl) return null;
+      thumbEl.classList.add('live-template-thumb');
+
+      let frame = thumbEl.querySelector('iframe.live-template-frame');
+      if (frame) return frame;
+
+       thumbEl.innerHTML = `
+         <div class="live-template-loading" aria-hidden="true">Loading…</div>
+         <div class="live-template-frame-wrap" aria-hidden="true">
+          <iframe class="live-template-frame" title="Template preview" loading="lazy" scrolling="no"></iframe>
+         </div>
+       `;
+       return thumbEl.querySelector('iframe.live-template-frame');
+     }
+
+    function scaleLiveThumb(thumbEl, frameEl) {
+      if (!thumbEl || !frameEl) return;
+      const w = thumbEl.clientWidth || 1;
+      const h = thumbEl.clientHeight || 1;
+      const scale = Math.min(w / LIVE_PREVIEW_BASE_WIDTH, h / LIVE_PREVIEW_BASE_HEIGHT);
+      frameEl.style.transform = `scale(${scale})`;
+    }
+
+    async function renderLiveTemplateThumb(formEl, templateId, thumbEl) {
+      const frame = ensureLiveTemplateThumb(thumbEl);
+      if (!frame) return;
+
+      const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      thumbEl.dataset.requestId = requestId;
+
+      const loadingEl = thumbEl.querySelector('.live-template-loading');
+      if (loadingEl) loadingEl.style.display = 'flex';
+      let didRender = false;
+
+      try {
+        const response = await fetch(`/api/preview/render-template/${encodeURIComponent(templateId)}`, {
+          method: 'POST',
+          body: new FormData(formEl)
+        });
+
+        if (thumbEl.dataset.requestId !== requestId) return;
+        if (!response.ok) throw new Error(`Preview failed (${response.status})`);
+
+        const html = await response.text();
+        if (thumbEl.dataset.requestId !== requestId) return;
+
+        frame.srcdoc = html;
+        didRender = true;
+        requestAnimationFrame(() => scaleLiveThumb(thumbEl, frame));
+      } catch (err) {
+        if (thumbEl.dataset.requestId !== requestId) return;
+        if (loadingEl) {
+          loadingEl.style.display = 'flex';
+          loadingEl.textContent = 'Preview unavailable';
+        }
+        console.warn(err);
+      } finally {
+        if (thumbEl.dataset.requestId !== requestId) return;
+        if (loadingEl && didRender) loadingEl.style.display = 'none';
+      }
+    }
+
+    async function refreshTemplatePreviews() {
+      syncTechnicalSkills();
+      syncSoftSkills();
+      syncProfileLinks();
+
+      const formEl = document.getElementById('resume-form');
+      if (!formEl) return;
+
+      const radios = Array.from(document.querySelectorAll('input[name="template_choice"]'));
+      await Promise.allSettled(
+        radios.map((radio) => renderLiveTemplateThumb(formEl, radio.value, radio.nextElementSibling))
+      );
+    }
+
+    const previewModal = document.getElementById('previewModal');
+    previewModal.addEventListener('shown.bs.modal', refreshTemplatePreviews);
+
+    document.querySelectorAll('input[name="template_choice"]').forEach((radio) => {
+      radio.addEventListener('change', function () {
+        if (this.checked) {
+          document.getElementById('selected-template').value = this.value;
+          if ((this.value === '8' || this.value === '9') && !document.getElementById('photo-input').files.length && !hasExistingPhoto) {
+            focusPhotoUpload();
+          }
+        }
+      });
+    });
+
+    document.getElementById('open-selected-preview').addEventListener('click', async function () {
+      const form = document.getElementById('resume-form');
+      const templateEl = document.querySelector('input[name="template_choice"]:checked');
+      const selectedTemplate = templateEl ? templateEl.value : '1';
+
+      document.getElementById('selected-template').value = selectedTemplate;
+      if (!validateTemplateRequirements(selectedTemplate)) {
+        return;
+      }
+      await ensureProjectDescriptions();
+      form.action = '{{ url_for("preview_resume") }}';
+      form.requestSubmit();
+    });
+
+    document.getElementById('confirm-export').addEventListener('click', async function () {
+      const form = document.getElementById('resume-form');
+      const templateEl = document.querySelector('input[name="template_choice"]:checked');
+      const selectedTemplate = templateEl ? templateEl.value : '1';
+
+      document.getElementById('selected-template').value = selectedTemplate;
+      if (!validateTemplateRequirements(selectedTemplate)) {
+        return;
+      }
+      await ensureProjectDescriptions();
+      form.action = '{{ url_for("export_resume", file_format="pdf") }}';
+      form.requestSubmit();
+    });
+
+    function setAiLoading(button, isLoading, label) {
+      if (!button) return;
+      if (isLoading) {
+        button.disabled = true;
+        button.dataset.originalText = button.textContent;
+        button.textContent = label || 'Working...';
+      } else {
+        button.disabled = false;
+        const original = button.dataset.originalText;
+        if (original) {
+          button.textContent = original;
+          delete button.dataset.originalText;
+        }
+      }
+    }
+
+    function setInlineStatus(el, message, isError = false) {
+      if (!el) return;
+      el.textContent = message || '';
+      el.classList.toggle('text-danger', Boolean(isError));
+    }
+
+    async function postJson(url, payload) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || {})
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `Request failed (${response.status})`);
+      }
+      return data;
+    }
+
+    async function ensureProjectDescriptions() {
+      const projectCards = Array.from(document.querySelectorAll('#project-list .repeat-card'));
+      for (const card of projectCards) {
+        const title = (card.querySelector('[name="project_title[]"]')?.value || '').trim();
+        const tech = (card.querySelector('[name="project_tech[]"]')?.value || '').trim();
+        const textarea = card.querySelector('[name="project_desc[]"]');
+        const details = (textarea?.value || '').trim();
+        const userPrompt = (card.querySelector('[data-ai-prompt]')?.value || '').trim();
+        const statusEl = card.querySelector('[data-ai-status]');
+
+        if (!title && !tech) continue;
+        if (details) continue;
+
+        try {
+          setInlineStatus(statusEl, 'Generating project bullets…');
+          const data = await postJson('/api/ai/ats-project', {
+            project_name: title,
+            technologies: tech,
+            project_details: '',
+            user_prompt: userPrompt
+          });
+          if (textarea && data.bullets) {
+            textarea.value = data.bullets;
+          }
+          setInlineStatus(statusEl, 'Project bullets added.');
+        } catch (err) {
+          setInlineStatus(statusEl, '');
+          console.warn('Project AI generation failed:', err);
+        }
+      }
+    }
+
+    function formatExperience() {
+      const unit = (document.getElementById('experience-unit')?.value || 'none').trim();
+      const rawValue = (document.getElementById('experience-value')?.value || '').toString().trim();
+      const num = rawValue ? parseInt(rawValue, 10) : 0;
+      if (unit === 'none') {
+        return 'No experience';
+      }
+      const safeNum = Number.isFinite(num) && num >= 0 ? num : 0;
+      const label = unit === 'years' ? 'years' : unit === 'months' ? 'months' : 'days';
+      return `${safeNum} ${label}`;
+    }
+
+    function getSkillsText() {
+      const technical = (document.getElementById('technical-skills-hidden')?.value || '').trim();
+      const soft = (document.getElementById('soft-skills-hidden')?.value || '').trim();
+      return `${technical}${technical && soft ? ', ' : ''}${soft}`.trim();
+    }
+
+    document.getElementById('ai-organize-technical-skills')?.addEventListener('click', async function () {
+      const button = this;
+      const groupedEl = document.getElementById('technical-skills-grouped');
+      const promptEl = document.getElementById('ai-organize-technical-prompt');
+      syncTechnicalSkills();
+      const technical = (document.getElementById('technical-skills-hidden')?.value || '').trim();
+      if (!technical) {
+        alert('Please add at least one technical skill first.');
+        return;
+      }
+      setAiLoading(button, true, 'Organizing...');
+      try {
+        const data = await postJson('/api/ai/organize-technical-skills', {
+          technical_skills: technical,
+          user_prompt: (promptEl?.value || '').trim()
+        });
+        if (groupedEl && data.organized) {
+          groupedEl.value = data.organized;
+        }
+      } catch (err) {
+        alert(err.message || 'AI organize failed.');
+      } finally {
+        setAiLoading(button, false, 'AI Organize');
+      }
+    });
+
+    function syncExperienceInputState() {
+      const unitEl = document.getElementById('experience-unit');
+      const valueEl = document.getElementById('experience-value');
+      if (!unitEl || !valueEl) return;
+      const unit = (unitEl.value || 'none').trim();
+      if (unit === 'none') {
+        valueEl.value = '';
+        valueEl.disabled = true;
+      } else {
+        valueEl.disabled = false;
+      }
+    }
+
+    syncExperienceInputState();
+    document.getElementById('experience-unit')?.addEventListener('change', syncExperienceInputState);
+
+    document.getElementById('ai-summary-btn')?.addEventListener('click', async function () {
+      const button = this;
+      const statusEl = document.getElementById('ai-summary-status');
+      const form = document.getElementById('resume-form');
+      syncProfileLinks();
+      syncTechnicalSkills();
+      syncSoftSkills();
+
+      const jobTitle = getValueByName('job_title');
+      if (!jobTitle) {
+        setInlineStatus(statusEl, 'Please enter a Job Title first.', true);
+        return;
+      }
+
+      const summaryEl = form.querySelector('[name="summary"]');
+      setInlineStatus(statusEl, '');
+      setAiLoading(button, true, 'Generating...');
+      try {
+        const data = await postJson('/api/ai/ats-summary', {
+          job_title: jobTitle,
+          experience: formatExperience(),
+          skills: getSkillsText(),
+          user_prompt: (document.getElementById('ai-summary-prompt')?.value || '').trim()
+        });
+        if (summaryEl && data.summary) {
+          summaryEl.value = data.summary;
+        }
+        setInlineStatus(statusEl, 'Summary updated.');
+      } catch (err) {
+        setInlineStatus(statusEl, err.message || 'AI request failed.', true);
+      } finally {
+        setAiLoading(button, false);
+      }
+    });
+
+    document.addEventListener('click', async function (event) {
+      const button = event.target.closest('button[data-ai-action]');
+      if (!button) return;
+
+      const action = (button.getAttribute('data-ai-action') || '').trim();
+      const card = button.closest('.repeat-card');
+      const statusEl = card ? card.querySelector('[data-ai-status]') : null;
+      if (!card) return;
+
+      syncProfileLinks();
+      syncTechnicalSkills();
+      syncSoftSkills();
+
+      const globalJobTitle = getValueByName('job_title');
+      if (!globalJobTitle) {
+        setInlineStatus(statusEl, 'Please enter a Job Title first.', true);
+        return;
+      }
+
+      setInlineStatus(statusEl, '');
+      setAiLoading(button, true, 'Generating...');
+      try {
+        if (action === 'project') {
+          const title = (card.querySelector('[name="project_title[]"]')?.value || '').trim();
+          const tech = (card.querySelector('[name="project_tech[]"]')?.value || '').trim();
+          const textarea = card.querySelector('[name="project_desc[]"]');
+          const details = (textarea?.value || '').trim();
+          const userPrompt = (card.querySelector('[data-ai-prompt]')?.value || '').trim();
+          if (!title && !tech && !details) {
+            throw new Error('Enter project title/tech/details first.');
+          }
+          const data = await postJson('/api/ai/ats-project', {
+            project_name: title,
+            technologies: tech,
+            project_details: details,
+            user_prompt: userPrompt
+          });
+          if (textarea && data.bullets) {
+            textarea.value = data.bullets;
+          }
+          setInlineStatus(statusEl, 'Project bullets updated.');
+          return;
+        }
+
+        if (action === 'experience') {
+          const role = (card.querySelector('[name="role[]"]')?.value || '').trim() || globalJobTitle;
+          const company = (card.querySelector('[name="company[]"]')?.value || '').trim();
+          const textarea = card.querySelector('[name="experience_desc[]"]');
+          const responsibilities = (textarea?.value || '').trim();
+          const userPrompt = (card.querySelector('[data-ai-prompt]')?.value || '').trim();
+          if (!role && !company && !responsibilities) {
+            throw new Error('Enter role/company/responsibilities first.');
+          }
+          const data = await postJson('/api/ai/ats-experience', {
+            job_title: role,
+            company_type: company,
+            technologies: getSkillsText(),
+            responsibilities: responsibilities,
+            user_prompt: userPrompt
+          });
+          if (textarea && data.bullets) {
+            textarea.value = data.bullets;
+          }
+          setInlineStatus(statusEl, 'Experience bullets updated.');
+          return;
+        }
+      } catch (err) {
+        setInlineStatus(statusEl, err.message || 'AI request failed.', true);
+      } finally {
+        setAiLoading(button, false);
+      }
+    });
+  </script>
+</body>
+</html>

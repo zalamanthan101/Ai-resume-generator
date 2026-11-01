@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Resume Generator | Smart Resume Builder</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <main class="home-page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="home-toast-container">
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show app-alert" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <section class="home-hero">
+      <div class="container py-4 py-lg-5">
+        <nav class="d-flex align-items-center justify-content-between home-nav">
+          <div class="home-logo">AI Resume Generator</div>
+          <div class="d-flex gap-2">
+            {% if user %}
+            <a href="{{ url_for('resume') }}" class="btn btn-outline-light px-4">Resume Builder</a>
+            <a href="{{ url_for('account') }}" class="btn btn-outline-light px-4">My Account</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-warning fw-semibold px-4">Logout</a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light px-4">Login</a>
+            <a href="{{ url_for('register') }}" class="btn btn-warning fw-semibold px-4">Register</a>
+            {% endif %}
+          </div>
+        </nav>
+
+        <div class="row align-items-center g-4 mt-3">
+          <div class="col-lg-7 text-white">
+            <p class="home-badge mb-3">For students, job-seekers and professionals</p>
+            <h1 class="home-title">Create job-winning resumes with AI in under 5 minutes</h1>
+            <p class="home-subtitle mt-3">
+              One smart form. Multiple professional formats. Download instantly and apply confidently.
+            </p>
+            <div class="d-flex flex-wrap gap-3 mt-4">
+              {% if user %}
+              <a href="{{ url_for('resume') }}" class="btn btn-warning btn-lg fw-semibold px-4">Create Resume</a>
+              <a href="{{ url_for('account') }}" class="btn btn-light btn-lg fw-semibold px-4">My Account</a>
+              {% else %}
+              <a href="{{ url_for('register') }}" class="btn btn-warning btn-lg fw-semibold px-4">Start Free</a>
+              <a href="{{ url_for('google_login') }}" class="btn btn-light btn-lg fw-semibold px-4">Continue with Google</a>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="home-preview-card">
+              <h3>Why teams choose us</h3>
+              <ul class="home-preview-list">
+                <li>ATS-friendly resume templates</li>
+                <li>AI-assisted content suggestions</li>
+                <li>One-click resume download</li>
+                <li>Simple, beginner-friendly workflow</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-5 bg-white">
+      <div class="container">
+        <div class="row g-3 text-center">
+          <div class="col-4 col-lg-4">
+            <div class="stat-card">
+              <h2>{{ stats.active_users }}</h2>
+              <p>Total Users</p>
+            </div>
+          </div>
+          <div class="col-4 col-lg-4">
+            <div class="stat-card">
+              <h2>{{ stats.total_customers }}</h2>
+              <p>Total Resume Created</p>
+            </div>
+          </div>
+          <div class="col-4 col-lg-4">
+            <div class="stat-card">
+              <h2>{{ stats.feedback_count }}</h2>
+              <p>Total Feedbacks</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-5 features-section">
+      <div class="container">
+        <div class="text-center mb-4">
+          <h2 class="section-title">What this application does</h2>
+          <p class="section-subtitle">Everything you need to create a clean and professional resume.</p>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="feature-card">
+              <h5>Smart Resume Builder</h5>
+              <p>Fill your details once and let AI structure your resume into recruiter-friendly format.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-card">
+              <h5>Fast Generation</h5>
+              <p>Generate polished resumes in seconds and download immediately without complex setup.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-card">
+              <h5>Secure Accounts</h5>
+              <p>Sign in with email/password or Google and manage your resume flow in one place.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-5 bg-white">
+      <div class="container">
+        <div class="text-center mb-4">
+          <h2 class="section-title">User Feedback</h2>
+          <p class="section-subtitle">Real feedback from your users.</p>
+        </div>
+        {% if feedback_entries %}
+        <div class="row g-4">
+          {% for item in feedback_entries %}
+          <div class="col-md-6 col-lg-4">
+            <div class="feedback-card">
+              <div class="small text-warning mb-2">
+                {% for _ in range(item.rating) %}★{% endfor %}
+                {% for _ in range(5 - item.rating) %}☆{% endfor %}
+              </div>
+              <p>"{{ item.comment }}"</p>
+              <h6>- {{ item.user_email }}</h6>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted">No feedback submitted yet.</div>
+        {% endif %}
+      </div>
+    </section>
+
+    {% if user %}
+    <section class="py-5 features-section">
+      <div class="container">
+        <div class="text-center mb-4">
+          <h2 class="section-title">Share Your Feedback</h2>
+        </div>
+        <div class="mx-auto" style="max-width: 700px;">
+          <div class="feature-card">
+            <form method="post" action="{{ url_for('feedback') }}">
+              <div class="mb-3">
+                <label for="rating" class="form-label">Rating (1 to 5)</label>
+                <select id="rating" name="rating" class="form-select" required>
+                  <option value="" selected disabled>Select rating</option>
+                  <option value="5">5 - Excellent</option>
+                  <option value="4">4 - Good</option>
+                  <option value="3">3 - Average</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="1">1 - Very Poor</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="comment" class="form-label">Feedback</label>
+                <textarea id="comment" name="comment" rows="4" class="form-control" required></textarea>
+              </div>
+              <button type="submit" class="btn btn-gradient w-100">Submit Feedback</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="py-5 cta-section">
+      <div class="container text-center">
+        <h2 class="text-white mb-3">Ready to build your resume?</h2>
+        <p class="text-white-50 mb-4">Start now and generate your next resume with AI.</p>
+        {% if user %}
+        <a href="{{ url_for('resume') }}" class="btn btn-warning btn-lg fw-semibold px-5">Go to Resume Builder</a>
+        {% else %}
+        <a href="{{ url_for('register') }}" class="btn btn-warning btn-lg fw-semibold px-5">Create Account</a>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

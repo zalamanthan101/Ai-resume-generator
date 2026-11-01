@@ -1,0 +1,21 @@
+{% set tpl = data.selected_template or '1' %}
+
+{% if tpl == '2' %}
+  {% include 'resume_templates/template_2.html' %}
+{% elif tpl == '3' %}
+  {% include 'resume_templates/template_3.html' %}
+{% elif tpl == '4' %}
+  {% include 'resume_templates/template_4.html' %}
+{% elif tpl == '5' %}
+  {% include 'resume_templates/template_5.html' %}
+{% elif tpl == '6' %}
+  {% include 'resume_templates/template_6.html' %}
+{% elif tpl == '7' %}
+  {% include 'resume_templates/template_7.html' %}
+{% elif tpl == '8' %}
+  {% include 'resume_templates/template_8.html' %}
+{% elif tpl == '9' %}
+  {% include 'resume_templates/template_9.html' %}
+{% else %}
+  {% include 'resume_templates/template_1.html' %}
+{% endif %}

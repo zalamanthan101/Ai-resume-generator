@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Template Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: {{ (data.template_customizations.body_background if data.template_customizations and data.template_customizations.body_background else '#ffffff') }};
+        font-family: "Poppins", "Segoe UI", sans-serif;
+        overflow: hidden;
+      }
+
+      .embed-sheet {
+        width: 794px;
+        height: 1123px;
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="embed-sheet">
+      {% include '_resume_document.html' %}
+    </div>
+  </body>
+</html>

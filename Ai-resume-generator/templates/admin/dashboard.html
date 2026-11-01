@@ -1,0 +1,39 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Quick system overview{% endblock %}
+{% block content %}
+  <div class="row g-3">
+    <div class="col-md-3">
+      <div class="card admin-card p-3">
+        <div class="text-muted small">Total Users</div>
+        <div class="fs-3 fw-semibold">{{ stats.active_users }}</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card admin-card p-3">
+        <div class="text-muted small">Resumes Generated</div>
+        <div class="fs-3 fw-semibold">{{ stats.resumes_generated }}</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card admin-card p-3">
+        <div class="text-muted small">Total Feedback</div>
+        <div class="fs-3 fw-semibold">{{ stats.feedback_count }}</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card admin-card p-3">
+        <div class="text-muted small">Satisfaction</div>
+        <div class="fs-3 fw-semibold">{{ stats.satisfaction }}%</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card admin-card p-3">
+        <div class="text-muted small">Best Template</div>
+        <div class="fs-3 fw-semibold">Template {{ stats.best_template }}</div>
+        <div class="text-muted small">{{ stats.best_template_downloads }} downloads</div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

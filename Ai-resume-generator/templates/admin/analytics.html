@@ -1,0 +1,54 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+{% block page_subtitle %}System usage (last 14 days){% endblock %}
+{% block head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card admin-card p-3">
+        <h6 class="mb-3">Users per day</h6>
+        <canvas id="usersChart" height="140"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card admin-card p-3">
+        <h6 class="mb-3">Resumes generated per day</h6>
+        <canvas id="resumesChart" height="140"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card admin-card p-3">
+        <h6 class="mb-3">Feedback rating distribution</h6>
+        <canvas id="ratingsChart" height="140"></canvas>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script>
+    const analytics = {{ analytics|tojson }};
+    const labels = analytics.labels || [];
+
+    new Chart(document.getElementById('usersChart'), {
+      type: 'line',
+      data: { labels, datasets: [{ label: 'Users', data: analytics.users_per_day || [], borderColor: '#1d4ed8', backgroundColor: 'rgba(29,78,216,0.15)', fill: true, tension: 0.25 }] },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    new Chart(document.getElementById('resumesChart'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'Resumes', data: analytics.resumes_per_day || [], backgroundColor: 'rgba(16,185,129,0.7)' }] },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    new Chart(document.getElementById('ratingsChart'), {
+      type: 'doughnut',
+      data: { labels: ['1','2','3','4','5'], datasets: [{ data: analytics.ratings || [0,0,0,0,0], backgroundColor: ['#ef4444','#f97316','#eab308','#22c55e','#2563eb'] }] },
+      options: { responsive: true }
+    });
+  </script>
+{% endblock %}
+

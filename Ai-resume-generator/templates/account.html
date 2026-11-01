@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Account | AI Resume Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="app-bg">
+  <nav class="navbar navbar-expand-lg app-nav">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-white" href="{{ url_for('dashboard') }}">AI Resume Generator</a>
+      <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light">Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-warning fw-semibold">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div class="panel-card">
+      <div class="account-header">
+        <div class="account-avatar-wrap">
+          {% if profile_photo_src %}
+          <img src="{{ profile_photo_src }}" alt="Profile photo" class="account-avatar">
+          {% else %}
+          <div class="account-avatar account-avatar-fallback">{{ (user.email or 'U')[0].upper() }}</div>
+          {% endif %}
+        </div>
+        <div>
+          <h2 class="mb-2">{{ account_name }}</h2>
+          <p class="mb-2"><strong>Email:</strong> {{ user.email }}</p>
+          <p class="mb-0"><strong>Status:</strong> Logged in</p>
+        </div>
+      </div>
+
+      <div class="account-grid mt-4">
+        <section class="account-card">
+          <h5>About You</h5>
+          <p class="mb-0">{{ user.profile_summary or saved_resume.summary or 'Save your resume details to see your profile summary here.' }}</p>
+        </section>
+
+        <section class="account-card">
+          <h5>Resume Activity</h5>
+          <p><strong>Saved Draft:</strong> {{ 'Available' if user.saved_resume_data else 'Not saved yet' }}</p>
+          <p><strong>Downloaded Resume:</strong> {{ 'Yes' if user.has_downloaded_resume else 'No' }}</p>
+          {% if user.last_resume_downloaded_at %}
+          <p><strong>Last Download:</strong> {{ user.last_resume_downloaded_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+          {% endif %}
+          {% if user.last_resume_download_name %}
+          <p class="mb-0"><strong>Last File:</strong> {{ user.last_resume_download_name }}</p>
+          {% endif %}
+        </section>
+      </div>
+
+      <div class="account-card mt-4">
+        <h5>Quick Actions</h5>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-gradient">Back to Dashboard</a>
+          <a href="{{ url_for('resume') }}" class="btn btn-outline-primary">Open Resume Builder</a>
+          {% if user.has_downloaded_resume or user.saved_resume_data %}
+          <a href="{{ url_for('resume') }}" class="btn btn-outline-success">Go to My Resume</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

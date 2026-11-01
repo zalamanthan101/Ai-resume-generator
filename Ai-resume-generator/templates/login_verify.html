@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verify Login | AI Resume Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <main class="login-container">
+    <div class="login-card">
+      <h2 class="text-center mb-3 fw-semibold text-gradient">Verify Login</h2>
+      <p class="text-center text-muted mb-4">Enter the OTP sent to your email to finish signing in.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show app-alert" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+      <form method="post">
+        <div class="mb-3">
+          <label for="email" class="form-label">E-mail</label>
+          <input type="email" id="email" name="email" class="form-control" value="{{ prefill_email }}" readonly required />
+        </div>
+        <div class="mb-3">
+          <label for="code" class="form-label">OTP</label>
+          <input type="hidden" id="code" name="code" />
+          <div class="otp-boxes mt-2" data-otp-boxes data-target="#code" aria-label="6-digit OTP input">
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" required />
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" required />
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" required />
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" required />
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" required />
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" required />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-gradient w-100 py-2 fw-semibold">Verify and Login</button>
+      </form>
+      <p class="signup-text text-center mt-3 mb-0">
+        Need a new OTP?
+        <a href="{{ url_for('login') }}" class="fw-bold text-gradient text-decoration-none">Login again</a>
+      </p>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Feedback{% endblock %}
+{% block page_title %}Feedback{% endblock %}
+{% block page_subtitle %}View and manage user feedback{% endblock %}
+{% block actions %}
+  <form method="get" class="d-flex gap-2 align-items-center">
+    <select class="form-select form-select-sm" name="rating" style="width: 180px;">
+      <option value="" {% if not selected_rating %}selected{% endif %}>All ratings</option>
+      {% for r in range(1,6) %}
+        <option value="{{ r }}" {% if selected_rating == (r|string) %}selected{% endif %}>Rating {{ r }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-sm btn-outline-primary" type="submit">Filter</button>
+  </form>
+{% endblock %}
+{% block content %}
+  <div class="card admin-card p-3">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Rating</th>
+            <th>Comment</th>
+            <th>Date</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in feedback_entries %}
+          <tr>
+            <td class="fw-semibold">{{ f.user_email }}</td>
+            <td><span class="badge text-bg-primary">{{ f.rating }}/5</span></td>
+            <td style="max-width: 680px;">{{ f.comment }}</td>
+            <td class="text-muted small">{{ f.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</td>
+            <td class="text-end">
+              <form method="post" action="{{ url_for('admin_feedback_delete', feedback_id=f.id) }}" class="d-inline" onsubmit="return confirm('Delete feedback?');">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

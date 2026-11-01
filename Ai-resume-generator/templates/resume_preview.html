@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resume Preview | AI Resume Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <style>
+    .preview-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      padding: 18px;
+      align-items: start;
+    }
+
+    .preview-layout.is-split {
+      grid-template-columns: 340px minmax(0, 1fr);
+    }
+
+    .preview-layout.is-split .customize-card {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+
+    .preview-layout.is-split .preview-toolbar,
+    .preview-layout.is-split .resume-preview-shell {
+      grid-column: 2;
+    }
+
+    .customize-card {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(14, 42, 71, 0.08);
+      position: sticky;
+      top: 88px;
+      max-height: calc(100vh - 110px);
+      overflow: auto;
+      display: none;
+    }
+
+    .customize-card.is-open {
+      display: block;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 18px 18px 0;
+      flex-wrap: wrap;
+    }
+
+    .preview-stage {
+      position: relative;
+      width: min(210mm, 100%);
+      margin: 0 auto;
+      min-height: 297mm;
+    }
+
+    #resume-preview-page {
+      position: relative;
+      z-index: 2;
+      background: transparent;
+      box-shadow: none;
+      min-height: 297mm;
+    }
+
+    #resume-preview-page > * {
+      min-height: 100%;
+    }
+
+    .preview-guide-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .preview-guide-sheet {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      background: var(--preview-sheet-bg, #ffffff);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+      border-radius: 2px;
+    }
+
+    .preview-page-label {
+      position: absolute;
+      right: 12px;
+      top: 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 58, 87, 0.08);
+      color: #0f3a57;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .customize-card h5 {
+      margin-bottom: 8px;
+      color: #0f3a57;
+    }
+
+    .customize-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .customize-card label {
+      font-weight: 600;
+      color: #294559;
+      margin-bottom: 4px;
+    }
+
+    .customize-card .form-text {
+      color: #607487;
+    }
+
+    @media (max-width: 991px) {
+      .preview-layout.is-split {
+        grid-template-columns: 1fr;
+      }
+
+      .customize-card {
+        top: 72px;
+        max-height: none;
+      }
+
+      .preview-stage {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 575px) {
+      .preview-toolbar {
+        padding: 12px 12px 0;
+      }
+      .preview-layout {
+        padding: 12px;
+        gap: 12px;
+      }
+      .customize-card {
+        padding: 14px;
+      }
+    }
+
+    .canvas-editable [data-canvas-edit][contenteditable="true"] {
+      outline: 2px dashed rgba(29, 78, 216, 0.35);
+      outline-offset: 2px;
+      border-radius: 6px;
+      padding: 1px 3px;
+    }
+
+    .canvas-editable [data-canvas-edit][contenteditable="true"]:focus {
+      outline-color: rgba(29, 78, 216, 0.75);
+      background: rgba(29, 78, 216, 0.06);
+    }
+
+  </style>
+</head>
+<body class="app-bg">
+  <nav class="navbar navbar-expand-lg app-nav">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-white" href="{{ url_for('home') }}">AI Resume Generator</a>
+      <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('resume') }}" class="btn btn-outline-light">Back to Form</a>
+        <button type="button" class="btn btn-outline-light" id="toggle-template-customizer">Customize Template</button>
+        <button type="button" class="btn btn-outline-light" id="toggle-text-edit" title="Enable inline text editing (Template 3 & 9)">Edit Text</button>
+        <button type="button" class="btn btn-success fw-semibold" id="save-preview-edits" disabled title="Save edits to your form data">Save Changes</button>
+        <button type="button" class="btn btn-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#previewExportModal">Export PDF</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-fluid p-0">
+    <div class="preview-layout">
+      <aside class="customize-card" id="tpl1-customizer">
+        <h5 id="tpl-customize-title">Customize Template</h5>
+        <p class="form-text mb-3">Live controls for font, color, and spacing. These settings will also be used in PDF export.</p>
+        <div class="customize-grid">
+          <div>
+            <label for="tpl-font-size" class="form-label">Font Size</label>
+            <input type="range" id="tpl-font-size" class="form-range" min="11" max="18" step="0.5" value="{{ (data.template_customizations.font_size if data.template_customizations else 13)|float }}">
+          </div>
+          <div>
+            <label for="tpl-line-height" class="form-label">Line Height</label>
+            <input type="range" id="tpl-line-height" class="form-range" min="1.3" max="2.1" step="0.05" value="{{ (data.template_customizations.line_height if data.template_customizations else 1.65)|float }}">
+          </div>
+          <div>
+            <label for="tpl-section-spacing" class="form-label">Section Spacing</label>
+            <input type="range" id="tpl-section-spacing" class="form-range" min="14" max="40" step="1" value="{{ (data.template_customizations.section_spacing if data.template_customizations else 24)|float }}">
+          </div>
+          <div>
+            <label for="tpl-page-padding" class="form-label">Page Padding</label>
+            <input type="range" id="tpl-page-padding" class="form-range" min="12" max="32" step="1" value="{{ (data.template_customizations.page_padding if data.template_customizations else 18)|float }}">
+          </div>
+          <div>
+            <label for="tpl-left-padding" class="form-label">Space From Left</label>
+            <input type="range" id="tpl-left-padding" class="form-range" min="8" max="40" step="1" value="{{ (data.template_customizations.left_padding if data.template_customizations else 18)|float }}">
+          </div>
+          <div>
+            <label for="tpl-right-padding" class="form-label">Space From Right</label>
+            <input type="range" id="tpl-right-padding" class="form-range" min="8" max="40" step="1" value="{{ (data.template_customizations.right_padding if data.template_customizations else 18)|float }}">
+          </div>
+          <div>
+            <label for="tpl-heading-size" class="form-label">Heading Size</label>
+            <input type="range" id="tpl-heading-size" class="form-range" min="12" max="22" step="0.5" value="{{ (data.template_customizations.heading_size if data.template_customizations else 15)|float }}">
+          </div>
+          <div>
+            <label for="tpl-heading-color" class="form-label">Heading Color</label>
+            <input type="color" id="tpl-heading-color" class="form-control form-control-color" value="{{ data.template_customizations.heading_color if data.template_customizations else '#0f3a57' }}">
+          </div>
+          <div>
+            <label for="tpl-text-color" class="form-label">Text Color</label>
+            <input type="color" id="tpl-text-color" class="form-control form-control-color" value="{{ data.template_customizations.text_color if data.template_customizations else '#1f2937' }}">
+          </div>
+          <div>
+            <label for="tpl-header-background" class="form-label" id="tpl-header-bg-label">Top Section Background</label>
+            <input type="color" id="tpl-header-background" class="form-control form-control-color" value="{{ data.template_customizations.header_background if data.template_customizations else '#ffffff' }}">
+          </div>
+          <div>
+            <label for="tpl-body-background" class="form-label" id="tpl-body-bg-label">Bottom Section Background</label>
+            <input type="color" id="tpl-body-background" class="form-control form-control-color" value="{{ data.template_customizations.body_background if data.template_customizations else '#ffffff' }}">
+          </div>
+          <div id="tpl-photo-controls" style="display:none;">
+            <label for="tpl-photo-size" class="form-label">Photo Size</label>
+            <input type="range" id="tpl-photo-size" class="form-range" min="60" max="160" step="1" value="{{ (data.template_customizations.photo_size if data.template_customizations else 0)|float }}">
+          </div>
+          <div id="tpl-photo-controls-2" style="display:none;">
+            <label for="tpl-photo-border" class="form-label">Photo Frame</label>
+            <input type="range" id="tpl-photo-border" class="form-range" min="0" max="10" step="1" value="{{ (data.template_customizations.photo_border if data.template_customizations else 0)|float }}">
+          </div>
+          <div id="tpl-photo-controls-3" style="display:none;">
+            <label for="tpl-photo-radius" class="form-label">Photo Roundness</label>
+            <input type="range" id="tpl-photo-radius" class="form-range" min="0" max="60" step="1" value="{{ (data.template_customizations.photo_radius if data.template_customizations else 0)|float }}">
+          </div>
+          <button type="button" class="btn btn-outline-secondary" id="tpl-reset">Reset</button>
+        </div>
+      </aside>
+
+      <div class="preview-toolbar">
+        <div class="text-muted small">A4 preview with visible page guides</div>
+      </div>
+
+      <div class="resume-preview-shell">
+        <div class="preview-stage" id="preview-stage">
+          <div class="preview-guide-layer" id="preview-guide-layer"></div>
+          <div class="resume-preview-page" id="resume-preview-page">
+            {% include '_resume_document.html' %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal fade" id="previewExportModal" tabindex="-1" aria-labelledby="previewExportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="previewExportModalLabel">Export Resume PDF</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2 fw-semibold">Choose Template</p>
+          <div class="template-grid">
+            <label class="template-option template-option-simple">
+              <input type="radio" name="preview_template_choice" value="1" {% if (data.selected_template or '1') == '1' %}checked{% endif %}>
+              <span>1</span>
+            </label>
+            <label class="template-option template-option-simple">
+              <input type="radio" name="preview_template_choice" value="2" {% if (data.selected_template or '1') == '2' %}checked{% endif %}>
+              <span>2</span>
+            </label>
+            <label class="template-option template-option-simple">
+              <input type="radio" name="preview_template_choice" value="3" {% if (data.selected_template or '1') == '3' %}checked{% endif %}>
+              <span>3</span>
+            </label>
+            <label class="template-option template-option-simple">
+              <input type="radio" name="preview_template_choice" value="4" {% if (data.selected_template or '1') == '4' %}checked{% endif %}>
+              <span>4</span>
+            </label>
+            <label class="template-option template-option-simple">
+              <input type="radio" name="preview_template_choice" value="5" {% if (data.selected_template or '1') == '5' %}checked{% endif %}>
+              <span>5</span>
+            </label>
+            <label class="template-option template-option-simple">
+              <input type="radio" name="preview_template_choice" value="6" {% if (data.selected_template or '1') == '6' %}checked{% endif %}>
+              <span>6</span>
+            </label>
+            <label class="template-option template-option-simple">
+              <input type="radio" name="preview_template_choice" value="7" {% if (data.selected_template or '1') == '7' %}checked{% endif %}>
+              <span>7</span>
+            </label>
+            <label class="template-option template-option-simple">
+              <input type="radio" name="preview_template_choice" value="8" {% if (data.selected_template or '1') == '8' %}checked{% endif %}>
+              <span>8</span>
+            </label>
+            <label class="template-option template-option-simple">
+              <input type="radio" name="preview_template_choice" value="9" {% if (data.selected_template or '1') == '9' %}checked{% endif %}>
+              <span>9</span>
+            </label>
+          </div>
+
+          <div class="export-only-card mt-3">
+            <div class="fw-semibold">Export format</div>
+            <div class="text-muted small">PDF only</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-gradient" id="confirm-preview-export">Download PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form id="preview-photo-form" method="post" action="{{ url_for('preview_update_photo') }}" enctype="multipart/form-data" class="d-none">
+    <input type="file" name="photo" id="preview-photo-input" accept=".png,.jpg,.jpeg,.webp" />
+  </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const templateDefaults = {
+      font_size: {{ (data.template_customizations.font_size if data.template_customizations else 13)|float }},
+      line_height: {{ (data.template_customizations.line_height if data.template_customizations else 1.65)|float }},
+      section_spacing: {{ (data.template_customizations.section_spacing if data.template_customizations else 24)|float }},
+      page_padding: {{ (data.template_customizations.page_padding if data.template_customizations else 18)|float }},
+      left_padding: {{ (data.template_customizations.left_padding if data.template_customizations else 18)|float }},
+      right_padding: {{ (data.template_customizations.right_padding if data.template_customizations else 18)|float }},
+      heading_size: {{ (data.template_customizations.heading_size if data.template_customizations else 15)|float }},
+      heading_color: '{{ data.template_customizations.heading_color if data.template_customizations else "#0f3a57" }}',
+      text_color: '{{ data.template_customizations.text_color if data.template_customizations else "#1f2937" }}',
+      header_background: '{{ data.template_customizations.header_background if data.template_customizations else "#ffffff" }}',
+      body_background: '{{ data.template_customizations.body_background if data.template_customizations else "#ffffff" }}',
+      photo_size: {{ (data.template_customizations.photo_size if data.template_customizations else 0)|float }},
+      photo_border: {{ (data.template_customizations.photo_border if data.template_customizations else 0)|float }},
+      photo_radius: {{ (data.template_customizations.photo_radius if data.template_customizations else 0)|float }}
+    };
+    const previewLayout = document.querySelector('.preview-layout');
+    const customizer = document.getElementById('tpl1-customizer');
+    const toggleCustomizerBtn = document.getElementById('toggle-template-customizer');
+    const toggleTextEditBtn = document.getElementById('toggle-text-edit');
+    const saveEditsBtn = document.getElementById('save-preview-edits');
+
+    const activeTemplate = '{{ data.selected_template or "1" }}';
+    let editMode = false;
+    let editDirty = false;
+
+    async function savePreviewFields(fields) {
+      const response = await fetch('/api/preview/save-fields', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `Save failed (${response.status})`);
+      }
+      return data;
+    }
+
+    function textOf(node) {
+      return (node?.textContent || '').replace(/\u00A0/g, ' ').trim();
+    }
+
+    function textWithBreaks(node) {
+      if (!node) return '';
+      // innerText tends to preserve rendered line breaks for <br> / list items better than textContent.
+      const value = (node.innerText || node.textContent || '').replace(/\u00A0/g, ' ');
+      return value.replace(/\r\n/g, '\n').trim();
+    }
+
+    function collectPreviewFields() {
+      const page = document.getElementById('resume-preview-page');
+      const root = page?.querySelector(`.tpl${activeTemplate}`);
+      if (!root) return {};
+
+      const fields = {};
+      const nameEl = root.querySelector('[data-field="full_name"]') || root.querySelector('.resume-name') || root.querySelector('.name');
+      if (nameEl) fields.full_name = textOf(nameEl);
+      const jobEl = root.querySelector('[data-field="job_title"]') || root.querySelector('.resume-job-title') || root.querySelector('.role');
+      if (jobEl) fields.job_title = textOf(jobEl);
+
+      const emailEl = root.querySelector('[data-field="email"]');
+      if (emailEl) fields.email = textOf(emailEl);
+      const phoneEl = root.querySelector('[data-field="phone"]');
+      if (phoneEl) fields.phone = textOf(phoneEl);
+      const locationEl = root.querySelector('[data-field="location"]');
+      if (locationEl) fields.location = textOf(locationEl);
+
+      const techEl = root.querySelector('[data-field="technical_skills"]');
+      if (techEl) fields.technical_skills = textOf(techEl);
+      const softEl = root.querySelector('[data-field="soft_skills"]');
+      if (softEl) fields.soft_skills = textOf(softEl);
+
+      const summarySection = root.querySelector('[data-canvas-section="summary"]');
+      if (summarySection) {
+        const summaryRawEl = summarySection.querySelector('[data-field="summary"]');
+        if (summaryRawEl) {
+          fields.summary = textWithBreaks(summaryRawEl);
+        } else {
+          const lines = Array.from(summarySection.querySelectorAll('li[data-canvas-edit]')).map(textOf).filter(Boolean);
+          if (lines.length) fields.summary = lines.join('\n');
+          const p = summarySection.querySelector('[data-canvas-edit]:not(li)');
+          if (!fields.summary && p) fields.summary = textWithBreaks(p);
+        }
+      }
+
+      const achievementsSection = root.querySelector('[data-canvas-section="achievements"]');
+      if (achievementsSection) {
+        const rawEl = achievementsSection.querySelector('[data-field="achievements"]');
+        if (rawEl) {
+          const raw = textWithBreaks(rawEl);
+          const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean);
+          fields.achievements = lines.map((l) => (l.startsWith('- ') ? l : `- ${l.replace(/^-\\s+/, '')}`)).join('\n');
+        } else {
+          const lines = Array.from(achievementsSection.querySelectorAll('li[data-canvas-edit]')).map(textOf).filter(Boolean);
+          if (lines.length) fields.achievements = lines.map((l) => `- ${l.replace(/^-\\s+/, '')}`).join('\n');
+        }
+      }
+
+      const experienceSection = root.querySelector('[data-canvas-section="experience"]');
+      if (experienceSection) {
+        const rawEl = experienceSection.querySelector('[data-field="experience_desc"]');
+        if (rawEl) {
+          fields.experience_desc = textWithBreaks(rawEl);
+        } else {
+          const blocks = [];
+          const entries = Array.from(experienceSection.querySelectorAll('.entry'));
+          entries.forEach((entry, index) => {
+            const company = textOf(entry.querySelector('[data-exp-company]') || entry.querySelector('.entry-title'));
+            const role = textOf(entry.querySelector('[data-exp-role]') || entry.querySelector('.entry-subhead'));
+            const duration = textOf(entry.querySelector('[data-exp-duration]') || entry.querySelector('.entry-date'));
+            const bullets = Array.from(entry.querySelectorAll('li[data-canvas-edit]')).map(textOf).filter(Boolean);
+            const header = [role, company].filter(Boolean).join(' - ').trim();
+            const lines = [];
+            if (header) lines.push(`Experience ${index + 1}: ${header}`);
+            if (duration) lines.push(`Duration: ${duration}`);
+            bullets.forEach((b) => lines.push(b.replace(/^[-•]\\s+/, '')));
+            if (lines.length) blocks.push(lines.join('\n'));
+          });
+          fields.experience_desc = blocks.join('\n\n');
+        }
+      }
+
+      const projectsSection = root.querySelector('[data-canvas-section="projects"]');
+      if (projectsSection) {
+        const rawEl = projectsSection.querySelector('[data-field="project_desc"]');
+        if (rawEl) {
+          fields.project_desc = textWithBreaks(rawEl);
+        } else {
+          const blocks = [];
+          const entries = Array.from(projectsSection.querySelectorAll('.entry'));
+          entries.forEach((entry, index) => {
+            const title = textOf(entry.querySelector('[data-proj-title]') || entry.querySelector('.entry-title'));
+            const tech = textOf(entry.querySelector('[data-proj-tech]') || entry.querySelector('.project-tech'));
+            const bullets = Array.from(entry.querySelectorAll('li[data-canvas-edit]')).map(textOf).filter(Boolean);
+            const lines = [];
+            if (title) lines.push(`Project ${index + 1}: ${title}`);
+            if (tech) lines.push(`Technologies: ${tech}`);
+            bullets.forEach((b) => lines.push(b.replace(/^[-•]\\s+/, '')));
+            if (lines.length) blocks.push(lines.join('\n'));
+          });
+          fields.project_desc = blocks.join('\n\n');
+        }
+      }
+
+      return fields;
+    }
+
+    function markEditsDirty() {
+      if (!editMode) return;
+      editDirty = true;
+      if (saveEditsBtn) saveEditsBtn.disabled = false;
+    }
+
+    function enableInlineEditing() {
+      const page = document.getElementById('resume-preview-page');
+      const root = page?.querySelector(`.tpl${activeTemplate}`);
+      if (!root) return;
+      const editableNodes = root.querySelectorAll('[data-canvas-edit]');
+      editableNodes.forEach((node) => {
+        node.addEventListener('input', markEditsDirty);
+        node.addEventListener('blur', markEditsDirty);
+      });
+    }
+
+    function setEditMode(enabled) {
+      const page = document.getElementById('resume-preview-page');
+      const root = page?.querySelector(`.tpl${activeTemplate}`);
+      if (!root) return;
+      const editableNodes = root.querySelectorAll('[data-canvas-edit]');
+      if (!editableNodes.length && enabled) {
+        return;
+      }
+      editMode = Boolean(enabled);
+      root.classList.toggle('canvas-editable', editMode);
+      editableNodes.forEach((node) => {
+        node.setAttribute('contenteditable', editMode ? 'true' : 'false');
+      });
+      if (toggleTextEditBtn) toggleTextEditBtn.textContent = editMode ? 'Exit Edit' : 'Edit Text';
+    }
+
+    async function saveEditsNow() {
+      const fields = collectPreviewFields();
+      if (!Object.keys(fields).length) return;
+      if (saveEditsBtn) saveEditsBtn.disabled = true;
+      try {
+        await savePreviewFields(fields);
+        editDirty = false;
+      } catch (err) {
+        if (saveEditsBtn) saveEditsBtn.disabled = false;
+      }
+    }
+
+    function updateCustomizerLabels() {
+      const title = document.getElementById('tpl-customize-title');
+      const headerLabel = document.getElementById('tpl-header-bg-label');
+      const bodyLabel = document.getElementById('tpl-body-bg-label');
+      const photoControls = [
+        document.getElementById('tpl-photo-controls'),
+        document.getElementById('tpl-photo-controls-2'),
+        document.getElementById('tpl-photo-controls-3'),
+      ];
+      if (title) {
+        title.textContent = `Customize Template ${activeTemplate}`;
+      }
+
+      const verticalSplitTemplates = new Set(['2', '6', '9']);
+      if (verticalSplitTemplates.has(activeTemplate)) {
+        if (bodyLabel) bodyLabel.textContent = 'Left Background';
+        if (headerLabel) headerLabel.textContent = 'Right Background';
+      } else {
+        if (headerLabel) headerLabel.textContent = 'Top Section Background';
+        if (bodyLabel) bodyLabel.textContent = 'Bottom Section Background';
+      }
+
+      const photoTemplates = new Set(['4', '8', '9']);
+      const showPhoto = photoTemplates.has(activeTemplate);
+      photoControls.forEach((node) => {
+        if (!node) return;
+        node.style.display = showPhoto ? '' : 'none';
+      });
+    }
+
+    function getTemplateStyles() {
+      return {
+        font_size: document.getElementById('tpl-font-size').value,
+        line_height: document.getElementById('tpl-line-height').value,
+        section_spacing: document.getElementById('tpl-section-spacing').value,
+        page_padding: document.getElementById('tpl-page-padding').value,
+        left_padding: document.getElementById('tpl-left-padding').value,
+        right_padding: document.getElementById('tpl-right-padding').value,
+        heading_size: document.getElementById('tpl-heading-size').value,
+        heading_color: document.getElementById('tpl-heading-color').value,
+        text_color: document.getElementById('tpl-text-color').value,
+        header_background: document.getElementById('tpl-header-background').value,
+        body_background: document.getElementById('tpl-body-background').value,
+        photo_size: document.getElementById('tpl-photo-size')?.value,
+        photo_border: document.getElementById('tpl-photo-border')?.value,
+        photo_radius: document.getElementById('tpl-photo-radius')?.value
+      };
+    }
+
+    function renderPreviewPageGuides() {
+      const page = document.getElementById('resume-preview-page');
+      const stage = document.getElementById('preview-stage');
+      const layer = document.getElementById('preview-guide-layer');
+      const resumeContent = page.querySelector(`.tpl${activeTemplate}`) || page.firstElementChild;
+      const pageWidth = page.offsetWidth || stage.offsetWidth;
+      if (!pageWidth) {
+        return;
+      }
+
+      const pageHeight = pageWidth * (297 / 210);
+      const contentHeight = Math.max(resumeContent ? resumeContent.scrollHeight : 0, pageHeight);
+      const pageCount = Math.max(1, Math.ceil(contentHeight / pageHeight));
+      stage.style.minHeight = `${pageCount * pageHeight}px`;
+      page.style.minHeight = `${contentHeight}px`;
+      layer.innerHTML = '';
+
+      for (let index = 0; index < pageCount; index += 1) {
+        const sheet = document.createElement('div');
+        sheet.className = 'preview-guide-sheet';
+        sheet.style.top = `${index * pageHeight}px`;
+        sheet.style.height = `${pageHeight}px`;
+
+        const label = document.createElement('div');
+        label.className = 'preview-page-label';
+        label.textContent = `Page ${index + 1}`;
+        sheet.appendChild(label);
+        layer.appendChild(sheet);
+      }
+    }
+
+    function applyTemplateStyles() {
+      const resume = document.querySelector(`.tpl${activeTemplate}`);
+      if (!resume) {
+        customizer.classList.remove('is-open');
+        previewLayout.classList.remove('is-split');
+        toggleCustomizerBtn.style.display = 'none';
+        return;
+      }
+
+      toggleCustomizerBtn.style.display = 'inline-flex';
+      const styles = getTemplateStyles();
+      resume.style.setProperty(`--tpl${activeTemplate}-font-size`, `${styles.font_size}px`);
+      resume.style.setProperty(`--tpl${activeTemplate}-line-height`, styles.line_height);
+      resume.style.setProperty(`--tpl${activeTemplate}-section-spacing`, `${styles.section_spacing}px`);
+      resume.style.setProperty(`--tpl${activeTemplate}-page-padding`, `${styles.page_padding}px`);
+      resume.style.setProperty(`--tpl${activeTemplate}-left-padding`, `${styles.left_padding}px`);
+      resume.style.setProperty(`--tpl${activeTemplate}-right-padding`, `${styles.right_padding}px`);
+      resume.style.setProperty(`--tpl${activeTemplate}-heading-size`, `${styles.heading_size}px`);
+      resume.style.setProperty(`--tpl${activeTemplate}-heading-color`, styles.heading_color);
+      resume.style.setProperty(`--tpl${activeTemplate}-text-color`, styles.text_color);
+      resume.style.setProperty(`--tpl${activeTemplate}-header-background`, styles.header_background);
+      resume.style.setProperty(`--tpl${activeTemplate}-body-background`, styles.body_background);
+      if (styles.photo_size !== undefined && styles.photo_size !== null) {
+        resume.style.setProperty(`--tpl${activeTemplate}-photo-size`, `${styles.photo_size}px`);
+      }
+      if (styles.photo_border !== undefined && styles.photo_border !== null) {
+        resume.style.setProperty(`--tpl${activeTemplate}-photo-border`, `${styles.photo_border}px`);
+      }
+      if (styles.photo_radius !== undefined && styles.photo_radius !== null) {
+        resume.style.setProperty(`--tpl${activeTemplate}-photo-radius`, styles.photo_radius);
+      }
+      document.getElementById('preview-guide-layer').style.setProperty('--preview-sheet-bg', styles.body_background);
+      requestAnimationFrame(renderPreviewPageGuides);
+    }
+
+    function resetTemplateStyles() {
+      document.getElementById('tpl-font-size').value = templateDefaults.font_size;
+      document.getElementById('tpl-line-height').value = templateDefaults.line_height;
+      document.getElementById('tpl-section-spacing').value = templateDefaults.section_spacing;
+      document.getElementById('tpl-page-padding').value = templateDefaults.page_padding;
+      document.getElementById('tpl-left-padding').value = templateDefaults.left_padding;
+      document.getElementById('tpl-right-padding').value = templateDefaults.right_padding;
+      document.getElementById('tpl-heading-size').value = templateDefaults.heading_size;
+      document.getElementById('tpl-heading-color').value = templateDefaults.heading_color;
+      document.getElementById('tpl-text-color').value = templateDefaults.text_color;
+      document.getElementById('tpl-header-background').value = templateDefaults.header_background;
+      document.getElementById('tpl-body-background').value = templateDefaults.body_background;
+      if (document.getElementById('tpl-photo-size')) document.getElementById('tpl-photo-size').value = templateDefaults.photo_size;
+      if (document.getElementById('tpl-photo-border')) document.getElementById('tpl-photo-border').value = templateDefaults.photo_border;
+      if (document.getElementById('tpl-photo-radius')) document.getElementById('tpl-photo-radius').value = templateDefaults.photo_radius;
+      applyTemplateStyles();
+    }
+
+    ['tpl-font-size', 'tpl-line-height', 'tpl-section-spacing', 'tpl-page-padding', 'tpl-left-padding', 'tpl-right-padding', 'tpl-heading-size', 'tpl-heading-color', 'tpl-text-color', 'tpl-header-background', 'tpl-body-background', 'tpl-photo-size', 'tpl-photo-border', 'tpl-photo-radius'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', applyTemplateStyles);
+    });
+
+    document.getElementById('tpl-reset').addEventListener('click', resetTemplateStyles);
+    toggleCustomizerBtn.addEventListener('click', function () {
+      const isOpen = customizer.classList.toggle('is-open');
+      previewLayout.classList.toggle('is-split', isOpen);
+      toggleCustomizerBtn.textContent = isOpen ? 'Close Customize' : 'Customize Template';
+      requestAnimationFrame(renderPreviewPageGuides);
+    });
+    window.addEventListener('resize', renderPreviewPageGuides);
+    applyTemplateStyles();
+    updateCustomizerLabels();
+    enableInlineEditing();
+    setEditMode(false);
+    toggleTextEditBtn?.addEventListener('click', function () {
+      setEditMode(!editMode);
+    });
+    saveEditsBtn?.addEventListener('click', async function () {
+      if (!editDirty) return;
+      await saveEditsNow();
+    });
+
+    document.getElementById('confirm-preview-export').addEventListener('click', function () {
+      const templateEl = document.querySelector('input[name="preview_template_choice"]:checked');
+      const selectedTemplate = templateEl ? templateEl.value : '1';
+      const hasPhoto = {{ 'true' if data.photo_filename else 'false' }};
+      if ((selectedTemplate === '8' || selectedTemplate === '9') && !hasPhoto) {
+        window.location.href = '{{ url_for("resume") }}#photo-upload-section';
+        return;
+      }
+      const exportUrl = '{{ url_for("export_resume", file_format="pdf") }}';
+      const params = new URLSearchParams({ template: selectedTemplate });
+      if (selectedTemplate === activeTemplate) {
+        const styles = getTemplateStyles();
+        params.set(`tpl${selectedTemplate}_font_size`, styles.font_size);
+        params.set(`tpl${selectedTemplate}_line_height`, styles.line_height);
+        params.set(`tpl${selectedTemplate}_section_spacing`, styles.section_spacing);
+        params.set(`tpl${selectedTemplate}_page_padding`, styles.page_padding);
+        params.set(`tpl${selectedTemplate}_left_padding`, styles.left_padding);
+        params.set(`tpl${selectedTemplate}_right_padding`, styles.right_padding);
+        params.set(`tpl${selectedTemplate}_heading_size`, styles.heading_size);
+        params.set(`tpl${selectedTemplate}_heading_color`, styles.heading_color);
+        params.set(`tpl${selectedTemplate}_text_color`, styles.text_color);
+        params.set(`tpl${selectedTemplate}_header_background`, styles.header_background);
+        params.set(`tpl${selectedTemplate}_body_background`, styles.body_background);
+        if (styles.photo_size) params.set(`tpl${selectedTemplate}_photo_size`, styles.photo_size);
+        if (styles.photo_border !== undefined && styles.photo_border !== null) params.set(`tpl${selectedTemplate}_photo_border`, styles.photo_border);
+        if (styles.photo_radius !== undefined && styles.photo_radius !== null) params.set(`tpl${selectedTemplate}_photo_radius`, styles.photo_radius);
+      }
+      window.location.href = `${exportUrl}?${params.toString()}`;
+    });
+
+    (function setupPreviewPhotoChange() {
+      const input = document.getElementById('preview-photo-input');
+      const form = document.getElementById('preview-photo-form');
+      if (!input || !form) return;
+
+      const selectors = ['#resume-preview-page img.photo', '#resume-preview-page img.profile-v8-photo', '#resume-preview-page .photo.photo-placeholder', '#resume-preview-page .profile-v8-photo-placeholder'];
+      const targets = selectors.flatMap((sel) => Array.from(document.querySelectorAll(sel)));
+      if (!targets.length) return;
+
+      targets.forEach((el) => {
+        el.style.cursor = 'pointer';
+        el.setAttribute('title', 'Click to change photo');
+        el.addEventListener('click', () => input.click());
+      });
+
+      input.addEventListener('change', function () {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (file.size > 1_000_000) {
+          alert('Photo size must be 1 MB or less.');
+          input.value = '';
+          return;
+        }
+        form.submit();
+      });
+    })();
+  </script>
+</body>
+</html>

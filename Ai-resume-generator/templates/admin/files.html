@@ -1,0 +1,36 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Files{% endblock %}
+{% block page_title %}Resume Files{% endblock %}
+{% block page_subtitle %}Folder: {{ resumes_dir }}{% endblock %}
+{% block content %}
+  <div class="card admin-card p-3">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Size</th>
+            <th>Modified (UTC)</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in files %}
+          <tr>
+            <td class="fw-semibold">{{ f.name }}</td>
+            <td class="text-muted small">{{ (f.size / 1024)|round(1) }} KB</td>
+            <td class="text-muted small">{{ f.modified_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_files_download', filename=f.name) }}">Download</a>
+              <form method="post" action="{{ url_for('admin_files_delete', filename=f.name) }}" class="d-inline" onsubmit="return confirm('Delete this file?');">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

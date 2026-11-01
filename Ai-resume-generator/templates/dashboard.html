@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard | AI Resume Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="app-bg">
+  <nav class="navbar navbar-expand-lg app-nav sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-white" href="{{ url_for('dashboard') }}">AI Resume Generator</a>
+      <div class="d-flex align-items-center gap-3">
+        <a href="{{ url_for('resume') }}" class="btn btn-warning fw-semibold">Resume Builder</a>
+        <div class="dropdown">
+          <button class="profile-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {{ user.email[0].upper() }}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><h6 class="dropdown-header">{{ user.email }}</h6></li>
+            <li><a class="dropdown-item" href="{{ url_for('account') }}">My Account</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('resume') }}">Resume Page</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="dashboard-page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container py-3">
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show app-alert" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <section class="dashboard-hero">
+      <div class="container py-5">
+        <div class="row g-4 align-items-center">
+          <div class="col-lg-7">
+            <p class="db-badge mb-3">Live Product Dashboard</p>
+            <h1 class="dashboard-title text-white mb-3">Analytics, user feedback, and resume actions in one place</h1>
+            <p class="text-light-emphasis mb-4">
+              Welcome back, {{ user.email }}. Track platform growth, collect real feedback, and jump to resume generation anytime.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+              <a href="{{ url_for('resume') }}" class="btn btn-warning fw-semibold px-4">Build Resume</a>
+              <a href="{{ url_for('account') }}" class="btn btn-outline-light px-4">View Account</a>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="hero-spotlight">
+              <h5>Today Snapshot</h5>
+              <div class="spotlight-item">
+                <span>Active Users</span>
+                <strong>{{ stats.active_users }}</strong>
+              </div>
+              <div class="spotlight-item">
+                <span>Resumes Generated</span>
+                <strong>{{ stats.resumes_generated }}</strong>
+              </div>
+              <div class="spotlight-item">
+                <span>Feedback Received</span>
+                <strong>{{ stats.feedback_count }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container py-4">
+      <div class="row g-3">
+        <div class="col-6 col-lg-3">
+          <div class="metric-card metric-blue">
+            <p>Total Users</p>
+            <h2>{{ stats.active_users }}</h2>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="metric-card metric-green">
+            <p>Resumes Generated</p>
+            <h2>{{ stats.resumes_generated }}</h2>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="metric-card metric-orange">
+            <p>Feedback Count</p>
+            <h2>{{ stats.feedback_count }}</h2>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="metric-card metric-purple">
+            <p>Satisfaction</p>
+            <h2>{{ stats.satisfaction }}%</h2>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container pb-4">
+      <div class="panel-card">
+        <h4 class="mb-3">Performance Overview</h4>
+        <div class="kpi-grid">
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <span>User Reach</span>
+              <strong>{{ [stats.active_users * 5, 100]|min }}%</strong>
+            </div>
+            <div class="kpi-bar"><span style="width: {{ [stats.active_users * 5, 100]|min }}%"></span></div>
+          </div>
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <span>Resume Conversion</span>
+              <strong>{{ [stats.resumes_generated * 4, 100]|min }}%</strong>
+            </div>
+            <div class="kpi-bar"><span style="width: {{ [stats.resumes_generated * 4, 100]|min }}%"></span></div>
+          </div>
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <span>User Sentiment</span>
+              <strong>{{ stats.satisfaction }}%</strong>
+            </div>
+            <div class="kpi-bar"><span style="width: {{ stats.satisfaction }}%"></span></div>
+          </div>
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <span>Feedback Participation</span>
+              <strong>{{ [stats.feedback_count * 8, 100]|min }}%</strong>
+            </div>
+            <div class="kpi-bar"><span style="width: {{ [stats.feedback_count * 8, 100]|min }}%"></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container pb-4">
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="panel-card h-100">
+            <h4 class="mb-3">Platform Workflow</h4>
+            <div class="timeline">
+              <div class="timeline-item">
+                <h6>1. User Signs In</h6>
+                <p>Users access their account with email/password or Google authentication.</p>
+              </div>
+              <div class="timeline-item">
+                <h6>2. Resume Data Entry</h6>
+                <p>User navigates to Resume Builder and fills profile, education, project, and experience details.</p>
+              </div>
+              <div class="timeline-item">
+                <h6>3. Resume Generation</h6>
+                <p>System processes details and generates downloadable resume document instantly.</p>
+              </div>
+              <div class="timeline-item">
+                <h6>4. Feedback Collection</h6>
+                <p>Users rate the experience and add comments that update dashboard analytics.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="panel-card h-100">
+            <h4 class="mb-3">Usage Insights</h4>
+            <div class="insight-card mb-3">
+              <h6>Most Used Feature</h6>
+              <p>Resume generation module continues to be the highest activity zone across active accounts.</p>
+            </div>
+            <div class="insight-card mb-3">
+              <h6>Growth Signal</h6>
+              <p>User registrations and feedback submissions are creating healthy dashboard engagement.</p>
+            </div>
+            <div class="insight-card">
+              <h6>Focus for Improvement</h6>
+              <p>Increase feedback participation by prompting users after successful resume download.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container pb-5">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="panel-card h-100">
+            <h4 class="mb-3">Add Feedback</h4>
+            <form method="post" action="{{ url_for('feedback') }}">
+              <div class="mb-3">
+                <label for="rating" class="form-label">Rating (1 to 5)</label>
+                <select id="rating" name="rating" class="form-select" required>
+                  <option value="" selected disabled>Select rating</option>
+                  <option value="5">5 - Excellent</option>
+                  <option value="4">4 - Good</option>
+                  <option value="3">3 - Average</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="1">1 - Very Poor</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="comment" class="form-label">Your Feedback</label>
+                <textarea id="comment" name="comment" rows="4" class="form-control" placeholder="Write your feedback here..." required></textarea>
+              </div>
+              <button type="submit" class="btn btn-gradient w-100">Submit Feedback</button>
+            </form>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="panel-card h-100">
+            <h4 class="mb-3">Recent Feedback Wall</h4>
+            {% if feedback_entries %}
+            <div class="feedback-list">
+              {% for item in feedback_entries %}
+              <div class="feedback-item">
+                <div class="d-flex justify-content-between align-items-center">
+                  <strong>{{ item.user_email }}</strong>
+                  <small class="text-muted">{{ item.created_at.strftime('%d %b %Y') }}</small>
+                </div>
+                <div class="small text-warning mb-1">
+                  {% for _ in range(item.rating) %}★{% endfor %}
+                  {% for _ in range(5 - item.rating) %}☆{% endfor %}
+                </div>
+                <p class="mb-0">{{ item.comment }}</p>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No feedback submitted yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-footer-cta">
+      <div class="container py-5 text-center">
+        <h3 class="text-white mb-2">Ready to generate your next resume?</h3>
+        <p class="text-white-50 mb-4">Move to resume builder and continue from where you left off.</p>
+        <a href="{{ url_for('resume') }}" class="btn btn-warning btn-lg fw-semibold px-5">Open Resume Builder</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
+

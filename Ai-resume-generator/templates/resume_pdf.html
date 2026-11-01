@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resume PDF</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      background: {{ (data.template_customizations.body_background if data.template_customizations and data.template_customizations.body_background else '#ffffff') }};
+      font-family: "Poppins", "Segoe UI", sans-serif;
+    }
+
+    .pdf-page {
+      padding: 0;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      break-after: avoid-page;
+      page-break-after: avoid;
+    }
+
+    section,
+    article,
+    .entry,
+    .skill-card,
+    .repeat-card,
+    .bullet-list li {
+      break-inside: avoid-page;
+      page-break-inside: avoid;
+    }
+
+    ul, ol, p {
+      orphans: 3;
+      widows: 3;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="pdf-page">
+    {% include '_resume_document.html' %}
+  </div>
+</body>
+</html>

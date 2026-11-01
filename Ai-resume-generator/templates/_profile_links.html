@@ -1,0 +1,5 @@
+{% if data.profile_link_items %}
+  {% for item in data.profile_link_items %}
+    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="resume-link-label">{{ item.label }}</a>{% if not loop.last %} | {% endif %}
+  {% endfor %}
+{% endif %}
